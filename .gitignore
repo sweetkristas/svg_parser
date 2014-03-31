@@ -19,3 +19,14 @@
 *.exe
 *.out
 *.app
+
+# msvc files we definitely do not want
+*.sdf
+*.tlog
+*.pdb
+*.log
+*.idb
+*.ilk
+*.lastbuildstate
+*.suo
+*.user
