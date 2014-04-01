@@ -35,6 +35,7 @@ reflected point (i.e., (newx1, newy1), the first control point of the current pa
 
 */
 
+#include <cmath>
 #include <iostream>
 #include <list>
 
@@ -206,9 +207,68 @@ namespace svg
 				cairo_curve_to(cairo, cp1x, cp1y, cp2x, cp2y, x_, y_);
 				break;
 			}
-			case ARC:
-				std::cerr << "XXX:ERROR: Need to implement arc drawing" << std::endl;
+			case ARC: {
+				cairo_save(cairo);
+				double x1, y1;
+				cairo_get_current_point(cairo, &x1, &y1);
+				// prevent drawing a line from current position to start of arc.
+				cairo_new_sub_path(cairo);
+
+				// calculate some ellipse stuff
+				// a is the length of the major axis
+				// b is the length of the minor axis
+				double a, b;
+				bool swap_axis = false;
+				if(ry_ > rx_) {
+					a = ry_;
+					b = rx_;
+					swap_axis = true;
+				} else {
+					a = rx_;
+					b = ry_;
+				}
+				const double x2 = x_;
+				const double y2 = y_;
+				
+				// http://stackoverflow.com/questions/197649/how-to-calculate-center-of-an-ellipse-by-two-points-and-radius-sizes
+				const double r1 = (x1 - x2) / (2 * a);
+				const double r2 = (y2 - y1) / (2 * b);
+				const double a1 = std::atan2(r1, r2);
+				const double a2 = std::asin(std::sqrt(r1*r1+r2*r2));
+				// t1 is the angle to the first point
+				double t1 = a1+a2;
+				// t2 is the angle to the second point.
+				double t2 = a1-a2;
+				// (xc,yc) is the centre of the ellipse 
+				const double xc = x1 - a*cos(t1);
+				const double yc = y1 - b*sin(t1);
+
+				cairo_matrix_t mxy;
+				cairo_matrix_init_identity(&mxy);
+				cairo_matrix_translate(&mxy, xc, yc);
+				cairo_matrix_rotate(&mxy, x_axis_rotation_);
+				cairo_matrix_scale(&mxy, a, b);
+				if(sweep_flag_) {
+					cairo_matrix_t mirror;
+					// apply mirror in X then mirror Y transformation matrix.
+					cairo_matrix_init(&mirror, -1, 0, 0, -1, 0, 0);
+					cairo_matrix_multiply(&mxy, &mxy, &mirror);
+				}
+				cairo_set_matrix(cairo, &mxy);
+				// since we're going to scale/translate the cairo arc, we make it based on a unit circle.
+				if(large_arc_flag_) {
+					cairo_arc_negative(cairo, 0.0, 0.0, 1.0, t1, t2);
+				} else {
+					if(!swap_axis) {
+						std::swap(t1, t2);
+					}
+					cairo_arc(cairo, 0.0, 0.0, 1.0, t1, t2);
+				}
+
+				cairo_restore(cairo);
+				cairo_move_to(cairo, x_, y_);
 				break;
+			}
 		}
 		auto status = cairo_status(cairo);
 		ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status));

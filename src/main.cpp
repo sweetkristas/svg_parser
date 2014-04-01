@@ -14,9 +14,9 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	svg::parse p("c:\\projects\\svg_parser\\icons\\spider-face.svg");	
+	//svg::parse p("c:\\projects\\svg_parser\\icons\\spider-face.svg");	
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\zigzag-tune.svg");
-	//svg::parse p("c:\\projects\\svg_parser\\icons\\soccer-ball.svg");
+	svg::parse p("c:\\projects\\svg_parser\\icons\\test-arc.svg");
 	/*const std::string root_path("c:\\projects\\svg_parser\\icons\\");
 	std::vector<std::string> files;
 	sys::get_files_in_dir(root_path, &files);
@@ -27,14 +27,6 @@ int main(int argc, char* argv[])
 	}*/
 
 	SDL::SDLPtr manager(new SDL::SDL());
-	/*SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);*/
 	
 	cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
 	cairo_t* cairo = cairo_create(surface);
@@ -59,10 +51,6 @@ int main(int argc, char* argv[])
 
 	window_.reset(SDL_CreateWindow(title.c_str(), x, y, w, h, wnd_flags), [&](SDL_Window* wnd){
 		SDL_DestroyRenderer(renderer_);
-		//if(context_) {
-		//	SDL_GL_DeleteContext(context_);
-		//	context_ = NULL;
-		//}
 		SDL_DestroyWindow(wnd);
 	});
 	ASSERT_LOG(window_ != NULL, "Failed to create window: " << SDL_GetError());
@@ -70,9 +58,6 @@ int main(int argc, char* argv[])
 	Uint32 rnd_flags = SDL_RENDERER_ACCELERATED;
 	renderer_ = SDL_CreateRenderer(window_.get(), -1, rnd_flags);
 	ASSERT_LOG(renderer_ != NULL, "Failed to create renderer: " << SDL_GetError());				
-
-	//context_ = SDL_GL_CreateContext(window_.get());	
-	//ASSERT_LOG(context_ != NULL, "Failed to GL Context: " << SDL_GetError());
 
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 	SDL_RenderSetLogicalSize(renderer_, width, height);
@@ -85,7 +70,9 @@ int main(int argc, char* argv[])
 	bool done = false;
 	while(!done) {
 		while(SDL_PollEvent(&e)) {
-			if(e.type == SDL_QUIT) {
+			if(e.type == SDL_KEYUP && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+				done = true;
+			} else if(e.type == SDL_QUIT) {
 				done = true;
 			}
 		}
