@@ -35,6 +35,10 @@ reflected point (i.e., (newx1, newy1), the first control point of the current pa
 
 */
 
+#ifndef _USE_MATH_DEFINES
+#	define _USE_MATH_DEFINES	1
+#endif
+
 #include <cmath>
 #include <iostream>
 #include <list>
@@ -211,8 +215,6 @@ namespace svg
 				cairo_save(cairo);
 				double x1, y1;
 				cairo_get_current_point(cairo, &x1, &y1);
-				// prevent drawing a line from current position to start of arc.
-				cairo_new_sub_path(cairo);
 
 				// calculate some ellipse stuff
 				// a is the length of the major axis
@@ -243,26 +245,32 @@ namespace svg
 				const double xc = x1 - a*cos(t1);
 				const double yc = y1 - b*sin(t1);
 
+				// prevent drawing a line from current position to start of arc.
+				cairo_new_sub_path(cairo);
+
 				cairo_matrix_t mxy;
 				cairo_matrix_init_identity(&mxy);
-				cairo_matrix_translate(&mxy, xc, yc);
+				if((large_arc_flag_ && sweep_flag_ ) || (!large_arc_flag_ && !sweep_flag_ )) {
+					cairo_matrix_translate(&mxy, xc, yc);
+				} else {
+					cairo_matrix_translate(&mxy, xc-a, yc+b);
+				}
 				cairo_matrix_rotate(&mxy, x_axis_rotation_);
 				cairo_matrix_scale(&mxy, a, b);
-				if(sweep_flag_) {
-					cairo_matrix_t mirror;
-					// apply mirror in X then mirror Y transformation matrix.
-					cairo_matrix_init(&mirror, -1, 0, 0, -1, 0, 0);
-					cairo_matrix_multiply(&mxy, &mxy, &mirror);
-				}
-				cairo_set_matrix(cairo, &mxy);
+				cairo_transform(cairo, &mxy);
 				// since we're going to scale/translate the cairo arc, we make it based on a unit circle.
 				if(large_arc_flag_) {
-					cairo_arc_negative(cairo, 0.0, 0.0, 1.0, t1, t2);
-				} else {
-					if(!swap_axis) {
-						std::swap(t1, t2);
+					if(sweep_flag_) {
+						cairo_arc_negative(cairo, 0.0, 0.0, 1.0, t2, t1);
+					} else {
+						cairo_arc_negative(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
 					}
-					cairo_arc(cairo, 0.0, 0.0, 1.0, t1, t2);
+				} else {
+					if(sweep_flag_) {
+						cairo_arc(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
+					} else {
+						cairo_arc(cairo, 0.0, 0.0, 1.0, t2, t1);
+					}
 				}
 
 				cairo_restore(cairo);
