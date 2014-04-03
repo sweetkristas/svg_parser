@@ -21,11 +21,14 @@
 	   distribution.
 */
 
+#include <boost/assign/list_of.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include<boost/tokenizer.hpp>
+#include <boost/tokenizer.hpp>
+#include <set>
 #include <sstream>
+#include <stack>
 
 #include "asserts.hpp"
 #include "filesystem.hpp"
@@ -33,7 +36,7 @@
 #include "svg_paint.hpp"
 #include "svg_parse.hpp"
 #include "svg_path_parse.hpp"
-#include "svg_tranform.hpp"
+#include "SvgTransform.hpp"
 
 #ifndef M_PI
 #	define M_PI		3.1415926535897932384626433832795
@@ -53,18 +56,15 @@ namespace svg
 			}
 		}
 
-		void set_cairo_matrix_from_glm(cairo_t* cairo, const glm::mat3& txfr)
+		std::stack<paint>& get_fill_color_stack()
 		{
-			cairo_matrix_t mtx;
-			cairo_matrix_init(&mtx, txfr[0][0], txfr[1][0], txfr[0][1], txfr[1][1], txfr[2][0],txfr[2][1]);
-			cairo_set_matrix(cairo, &mtx);
+			static std::stack<paint> res;
+			return res;
 		}
-
-		void render_cairo_path(cairo_t* cairo, const std::vector<path_command_ptr>& path)
+		std::stack<paint>& get_stroke_color_stack()
 		{
-			for(auto p : path) {
-				p->cairo_render(cairo);
-			}
+			static std::stack<paint> res;
+			return res;
 		}
 	}
 
@@ -89,6 +89,9 @@ namespace svg
 		svg_length(float value, LengthUnit unit) : value_(value), units_(unit) {
 		}
 		svg_length(const std::string& length) {
+			from_string(length);
+		};
+		void from_string(const std::string& length) {
 			if(length.empty()) {
 				units_ = SVG_LENGTHTYPE_UNKNOWN;
 				value_ = 0.0f;
@@ -121,8 +124,8 @@ namespace svg
 			} else {
 				ASSERT_LOG(false, "Unrecognised length unit: " << unit);
 			}
-		};
-		float value_in_specified_units(LengthUnit units) {
+		}
+		float value_in_specified_units(LengthUnit units) const {
 			switch(units_) {
 				case SVG_LENGTHTYPE_UNKNOWN:
 					ASSERT_LOG(false, "Unrecognished type SVG_LENGTHTYPE_UNKNOWN");
@@ -140,7 +143,7 @@ namespace svg
 			return 0.0f;
 		}
 	private:
-		float convert_number(LengthUnit units) {
+		float convert_number(LengthUnit units) const {
 			switch(units) {
 				case SVG_LENGTHTYPE_UNKNOWN:
 					ASSERT_LOG(false, "Unhandled units value: SVG_LENGTHTYPE_UNKNOWN");
@@ -159,31 +162,31 @@ namespace svg
 			}
 			return 0;
 		}
-		float convert_percentage(LengthUnit units) {
+		float convert_percentage(LengthUnit units) const {
 			return 0;
 		}
-		float convert_ems(LengthUnit units) {
+		float convert_ems(LengthUnit units) const {
 			return 0;
 		}
-		float convert_exs(LengthUnit units) {
+		float convert_exs(LengthUnit units) const {
 			return 0;
 		}
-		float convert_px(LengthUnit units) {
+		float convert_px(LengthUnit units) const {
 			return 0;
 		}
-		float convert_cm(LengthUnit units) {
+		float convert_cm(LengthUnit units) const {
 			return 0;
 		}
-		float convert_mm(LengthUnit units) {
+		float convert_mm(LengthUnit units) const {
 			return 0;
 		}
-		float convert_in(LengthUnit units) {
+		float convert_in(LengthUnit units) const {
 			return 0;
 		}
-		float convert_pt(LengthUnit units) {
+		float convert_pt(LengthUnit units) const {
 			return 0;
 		}
-		float convert_pc(LengthUnit units) {
+		float convert_pc(LengthUnit units) const {
 			return 0;
 		}
 
@@ -216,7 +219,8 @@ namespace svg
 			stroke_linejoin_(LINEJOIN_INHERIT),
 			stroke_linecap_(LINECAP_INHERIT),
 			stroke_miterlimit_(0.0),
-			stroke_dashoffset_(0.0)
+			stroke_dashoffset_(0.0),
+			alpha_(1.0)
 		{
 		}
 		virtual ~fill() {
@@ -233,21 +237,94 @@ namespace svg
 			}
 		}
 		FillRule get_fill_rule(FillRule current_rule) const { fill_rule_ != FILL_INHERIT ? fill_rule_ : current_rule; }
-		
-		void set_color(const std::string& color_string) {
-			color_.reset(new paint(color_string));
+		void apply_fill_rule(cairo_t* cairo) const {
+			if(fill_rule_ != FILL_INHERIT) {
+				switch(fill_rule_) {
+					case FILL_EVENODD:	cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_EVEN_ODD); break;
+					case FILL_NONZERO:	cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_WINDING); break;
+				}
+			}
 		}
-		const paint_ptr& get_color(const paint_ptr& current_color) const { return color_ ? color_ : current_color; }
+
+		void set_fill_color(const std::string& color_string) {
+			fill_color_.reset(new paint(color_string));
+		}
+		void apply_colors() const {
+			apply_fill_color();
+			apply_stroke_color();
+		}
+		void apply_fill_color() const {
+			if(fill_color_) {
+				if(fill_color_->has_color()) {
+					get_fill_color_stack().emplace(fill_color_->r(), fill_color_->g(), fill_color_->b(), alpha_);
+					//cairo_set_source_rgba(cairo, fill_color_->r()/255.0, fill_color_->g()/255.0, fill_color_->b()/255.0, alpha_);
+
+				/*auto pattern = cairo_get_source(cairo);
+				switch(cairo_pattern_get_type(pattern)) {
+					case CAIRO_PATTERN_TYPE_SOLID: {
+						double r, g, b, a;
+						cairo_pattern_get_rgba(pattern, &r, &g, &b, &a);
+						std::cerr << "XXX: solid pattern set (" << r << "," << g << "," << b << "," << a << ")" << std::endl;
+						break;
+					}
+					case CAIRO_PATTERN_TYPE_SURFACE:
+						std::cerr << "XXX: surface pattern set" << std::endl;
+						break;
+					case CAIRO_PATTERN_TYPE_LINEAR:
+						std::cerr << "XXX: linear pattern set" << std::endl;
+						break;
+					case CAIRO_PATTERN_TYPE_RADIAL:
+						std::cerr << "XXX: radial pattern set" << std::endl;
+						break;
+					case CAIRO_PATTERN_TYPE_MESH:
+						std::cerr << "XXX: mesh pattern set" << std::endl;
+						break;
+					case CAIRO_PATTERN_TYPE_RASTER_SOURCE:
+						std::cerr << "XXX: raster source pattern set" << std::endl;
+						break;
+					default:
+						ASSERT_LOG(false, "Unrecognised pattern type: " << cairo_pattern_get_type(pattern));
+				}*/
+				} else {
+					get_fill_color_stack().emplace(0,0,0,0);
+					//cairo_set_source_rgba(cairo, 0,0,0,0);
+				}
+			}
+		}
 		
 		void set_stroke_color(const std::string& color_string) {
 			stroke_color_.reset(new paint(color_string));
 		}
 		const paint_ptr& get_stroke_color(const paint_ptr& current_color) const { return stroke_color_ ? stroke_color_ : current_color; }
+		void apply_stroke_color() const {
+			if(stroke_color_) {
+				if(stroke_color_->has_color()) {
+					get_stroke_color_stack().emplace(stroke_color_->r(), stroke_color_->g(), stroke_color_->b(), alpha_);
+					//cairo_set_source_rgba(cairo, stroke_color_->r()/255.0, stroke_color_->g()/255.0, stroke_color_->b()/255.0, alpha_);
+				} else {
+					get_stroke_color_stack().emplace(0,0,0,0);
+					//cairo_set_source_rgba(cairo, 0,0,0,0);
+				}
+			}
+		}
+		void unapply_colors() const {
+			if(fill_color_) {
+				get_fill_color_stack().pop();
+			}
+			if(stroke_color_) {
+				get_stroke_color_stack().pop();
+			}
+		}
 		
 		void set_stroke_width(const std::string& w) {
 			stroke_width_.reset(new svg_length(w));
 		}
 		float get_stroke_width(float current_width) const { return stroke_width_ ? stroke_width_->value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER) : current_width; }
+		void apply_stroke_width(cairo_t* cairo) const {
+			if(stroke_width_) {
+				cairo_set_line_width(cairo, stroke_width_->value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
+			}
+		}
 
 		void set_stroke_linejoin(const std::string& lj) {
 			if(lj == "miter") {
@@ -261,6 +338,14 @@ namespace svg
 			}
 		}
 		LineJoin get_stroke_linejoin(LineJoin def) const { return stroke_linejoin_ != LINEJOIN_INHERIT ? stroke_linejoin_ : def; }
+		void apply_stroke_linejoin(cairo_t* cairo) const {
+			switch (stroke_linejoin_) {
+				case LINEJOIN_MITER: cairo_set_line_join(cairo, CAIRO_LINE_JOIN_MITER); break;
+				case LINEJOIN_ROUND: cairo_set_line_join(cairo, CAIRO_LINE_JOIN_ROUND); break;
+				case LINEJOIN_BEVEL: cairo_set_line_join(cairo, CAIRO_LINE_JOIN_BEVEL); break;
+				default: break;
+			}
+		}
 
 		void set_stroke_linecap(const std::string& lc) {
 			if(lc == "butt") {
@@ -274,6 +359,14 @@ namespace svg
 			}
 		}
 		LineCap get_stroke_linecap(LineCap def) const { return stroke_linecap_!= LINECAP_INHERIT ? stroke_linecap_ : def; }
+		void apply_stroke_linecap(cairo_t* cairo) const {
+			switch(stroke_linecap_) {
+				case LINECAP_BUTT:		cairo_set_line_cap(cairo, CAIRO_LINE_CAP_BUTT); break;
+				case LINECAP_ROUND:		cairo_set_line_cap(cairo, CAIRO_LINE_CAP_ROUND); break;
+				case LINECAP_SQUARE:	cairo_set_line_cap(cairo, CAIRO_LINE_CAP_SQUARE); break;
+				default: break;
+			}
+		}
 
 		void set_stroke_miterlimit(const std::string& ml) {
 			try {
@@ -283,6 +376,11 @@ namespace svg
 			}
 		}
 		double get_stroke_miterlimit(double def) const { return stroke_miterlimit_ ? stroke_miterlimit_ : def; }
+		void apply_stroke_miterlimit(cairo_t* cairo) const {
+			if(stroke_miterlimit_ != 0.0) {
+				cairo_set_miter_limit(cairo, stroke_miterlimit_);
+			}
+		}
 
 		void set_stroke_dashoffset(const std::string& offs) {
 			try {
@@ -312,62 +410,7 @@ namespace svg
 			}
 			return stroke_dasharray_;
 		}
-
-		void set_cairo_values(cairo_t* cairo) {
-			if(color_) {
-				cairo_set_source_rgb(cairo, color_->r()/255.0, color_->g()/255.0, color_->b()/255.0);
-				/*auto pattern = cairo_get_source(cairo);
-				switch(cairo_pattern_get_type(pattern)) {
-					case CAIRO_PATTERN_TYPE_SOLID: {
-						double r, g, b, a;
-						cairo_pattern_get_rgba(pattern, &r, &g, &b, &a);
-						std::cerr << "XXX: solid pattern set (" << r << "," << g << "," << b << "," << a << ")" << std::endl;
-						break;
-					}
-					case CAIRO_PATTERN_TYPE_SURFACE:
-						std::cerr << "XXX: surface pattern set" << std::endl;
-						break;
-					case CAIRO_PATTERN_TYPE_LINEAR:
-						std::cerr << "XXX: linear pattern set" << std::endl;
-						break;
-					case CAIRO_PATTERN_TYPE_RADIAL:
-						std::cerr << "XXX: radial pattern set" << std::endl;
-						break;
-					case CAIRO_PATTERN_TYPE_MESH:
-						std::cerr << "XXX: mesh pattern set" << std::endl;
-						break;
-					case CAIRO_PATTERN_TYPE_RASTER_SOURCE:
-						std::cerr << "XXX: raster source pattern set" << std::endl;
-						break;
-					default:
-						ASSERT_LOG(false, "Unrecognised pattern type: " << cairo_pattern_get_type(pattern));
-				}*/
-			}
-
-			if(fill_rule_ != FILL_INHERIT) {
-				switch(fill_rule_) {
-					case FILL_EVENODD:	cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_EVEN_ODD); break;
-					case FILL_NONZERO:	cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_WINDING); break;
-				}
-			}
-			if(stroke_width_) {
-				cairo_set_line_width(cairo, stroke_width_->value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
-			}
-			switch (stroke_linejoin_) {
-				case LINEJOIN_MITER: cairo_set_line_join(cairo, CAIRO_LINE_JOIN_MITER); break;
-				case LINEJOIN_ROUND: cairo_set_line_join(cairo, CAIRO_LINE_JOIN_ROUND); break;
-				case LINEJOIN_BEVEL: cairo_set_line_join(cairo, CAIRO_LINE_JOIN_BEVEL); break;
-				default: break;
-			}
-			switch(stroke_linecap_) {
-				case LINECAP_BUTT:		cairo_set_line_cap(cairo, CAIRO_LINE_CAP_BUTT); break;
-				case LINECAP_ROUND:		cairo_set_line_cap(cairo, CAIRO_LINE_CAP_ROUND); break;
-				case LINECAP_SQUARE:	cairo_set_line_cap(cairo, CAIRO_LINE_CAP_SQUARE); break;
-				default: break;
-			}
-			if(stroke_miterlimit_ != 0.0) {
-				cairo_set_miter_limit(cairo, stroke_miterlimit_);
-			}
+		void apply_stroke_dasharray(cairo_t* cairo) {
 			if(!stroke_dasharray_.empty()) {
 				std::vector<double> dashes;
 				for(auto& l : stroke_dasharray_) {
@@ -375,10 +418,26 @@ namespace svg
 				}
 				cairo_set_dash(cairo, &dashes[0], dashes.size(), stroke_dashoffset_);
 			}
-			
+		}
+
+		void set_opacity(const std::string& opacity) {
+			try {
+				alpha_ = boost::lexical_cast<double>(opacity);
+			} catch(const boost::bad_lexical_cast&) {
+				ASSERT_LOG(false, "Unable to convert value: '" << opacity << "' to a number");
+			}
+		}
+		double get_opactity() const { return alpha_; }
+
+		void set_cairo_values(cairo_t* cairo) const {
+			apply_fill_rule(cairo);
+			apply_stroke_width(cairo);
+			apply_stroke_linejoin(cairo);
+			apply_stroke_linecap(cairo);
+			apply_stroke_miterlimit(cairo);		
 		}
 	private:
-		paint_ptr color_;
+		paint_ptr fill_color_;
 		paint_ptr stroke_color_;
 		FillRule fill_rule_;
 		std::shared_ptr<svg_length> stroke_width_;
@@ -387,23 +446,116 @@ namespace svg
 		double stroke_miterlimit_;
 		std::vector<svg_length> stroke_dasharray_;
 		double stroke_dashoffset_;
+		double alpha_;
+	};
+
+	class font_properties
+	{
+	public:
+		enum class FontStyle {
+			INHERIT,
+			NORMAL,
+			ITALIC,
+			OBLIQUE,
+		};
+		enum class FontVariant {
+			INHERIT,
+			NORMAL,
+			SMALL_CAPS,
+		};
+		font_properties() 
+			: font_style_(FontStyle::NORMAL),
+			font_variant_(FontVariant::NORMAL),
+			letter_spacing_inherited_(false),
+			// XXX move this to a constants section
+			letter_spacing_value_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
+			font_size_inherited_(false),
+			// XXX move this to a constants section
+			font_size_(12, svg_length::SVG_LENGTHTYPE_NUMBER)
+		{
+		}
+		~font_properties() {}
+		void set_font_family(const std::string& font_family) {
+			font_family_ = font_family;
+		}
+		const std::string& get_font_family() const { return font_family_; }
+		void set_font_style(const std::string& style) {
+			if(style == "inherit") {
+				font_style_ = FontStyle::INHERIT;
+			} else if(style == "normal") {
+				font_style_ = FontStyle::NORMAL;
+			} else if(style == "italic") {
+				font_style_ = FontStyle::ITALIC;
+			} else if(style == "oblique") {
+				font_style_ = FontStyle::OBLIQUE;
+			} else {
+				ASSERT_LOG(false, "Unrecognised font-style: " << style);
+			}
+		}
+		FontStyle get_font_style() const { return font_style_; }
+		void set_font_variant(const std::string& var) {
+			if(var == "inherit") {
+				font_variant_ = FontVariant::INHERIT;
+			} else if(var == "normal") {
+				font_variant_ = FontVariant::NORMAL;
+			} else if(var == "small-caps") {
+				font_variant_ = FontVariant::SMALL_CAPS;
+			} else {
+				ASSERT_LOG(false, "Unrecognised font-variant: " << var);
+			}
+		}
+		FontVariant get_font_variant() const { return font_variant_; }
+		void set_font_size(const std::string& size) {
+			if(size == "inherit") {
+				font_size_inherited_ = true;
+			} else {
+				font_size_.from_string(size);
+			}
+		}
+		double get_font_size(double parent_value) const { 
+			if(font_size_inherited_) {
+				return parent_value;
+			}
+			return font_size_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+		}
+		void set_letter_spacing(const std::string& spacing) {
+			if(spacing == "normal") {
+				// XXX move this to a constants section
+				letter_spacing_value_ = svg_length(0, svg_length::SVG_LENGTHTYPE_NUMBER);
+				letter_spacing_inherited_ = false;
+			} else if(spacing == "inherit") {
+				letter_spacing_inherited_ = true;
+			} else {
+				letter_spacing_value_.from_string(spacing);
+				letter_spacing_inherited_ = false;
+			}
+		}
+		double get_letter_spacing(double parent_value) const {
+			if(letter_spacing_inherited_) { 
+				return parent_value;
+			} 
+			return letter_spacing_value_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+		}
+	private:
+		std::string font_family_;
+		FontStyle font_style_;
+		FontVariant font_variant_;
+		bool font_size_inherited_;
+		svg_length font_size_;
+		// font-weight : 	normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
+		// font-stretch :	normal | wider | narrower | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded | inherit
+		// font-size-adjust : 	<number> | none | inherit
+		// kerning : auto | <length> | inherit
+		bool letter_spacing_inherited_;
+		svg_length letter_spacing_value_;
+		// word-spacing : 	normal | <length> | inherit
+		// text-decoration : none | [ underline || overline || line-through || blink ] | inherit
 	};
 
 	class shapes
 	{
 	public:
-		shapes() {}
-		virtual ~shapes() {}
-		//virtual void render(const context& ctx) = 0;
-		virtual void cairo_render(cairo_t* cairo) = 0;
-	private:
-	};
-	typedef std::shared_ptr<shapes> shapes_ptr;
-
-	class path : public shapes
-	{
-	public:
-		path(const ptree& pt) {
+		shapes(const ptree& pt, const std::set<std::string>& exclusions) {
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
 				for(auto& attr : *attributes) {
@@ -413,9 +565,9 @@ namespace svg
 							path_ = parse_path(d);
 						}
 					} else if(attr.first == "transform") {
-						transform_list_ = transform::factory(attr.second.data());
+						transform_list_ = Transform::Factory(attr.second.data());
 					} else if(attr.first == "fill") {
-						fill_.set_color(attr.second.data());
+						fill_.set_fill_color(attr.second.data());
 					} else if(attr.first == "stroke") {
 						fill_.set_stroke_color(attr.second.data());
 					} else if(attr.first == "stroke-width") {
@@ -431,51 +583,122 @@ namespace svg
 					} else if(attr.first == "stroke-dasharray") {
 						fill_.set_stroke_dasharray(attr.second.data());
 					} else if(attr.first == "color") {
-						fill_.set_color(attr.second.data());
+						fill_.set_fill_color(attr.second.data());
 					} else if(attr.first == "stroke-dashoffset") {
 						fill_.set_stroke_dashoffset(attr.second.data());
+					} else if(attr.first == "opacity") {
+						fill_.set_opacity(attr.second.data());
+					} else if(attr.first == "font-family") {
+						font_.set_font_family(attr.second.data());
+					} else if(attr.first == "font-size") {
+						font_.set_font_size(attr.second.data());
+					} else if(attr.first == "letter-spacing") {
+						font_.set_letter_spacing(attr.second.data());
 					} else {
-						std::cerr << "SVG: path unhandled attribute: '" << attr.first << "' : '" << attr.second.data() << "'" << std::endl;
+						if(exclusions.find(attr.first) == exclusions.end()) {
+							std::cerr << "SVG: path unhandled attribute: '" << attr.first << "' : '" << attr.second.data() << "'" << std::endl;
+						}
 					}
 				}
 			}
 		}
-		virtual ~path() {
-		}
-		virtual void cairo_render(cairo_t* cairo) override {
+		virtual ~shapes() {}
+		void CairoRender(cairo_t* cairo) const {
 			cairo_save(cairo);
+			fill_.apply_colors();
+
+			ApplyFill(cairo);
+			ApplyFontProperties(cairo);
+			ApplyTransforms(cairo);
+
+			HandleCairoRender(cairo);
+
+			RenderSubPaths(cairo);
+			
+			fill_.unapply_colors();
+			cairo_restore(cairo);
+		}
+		void ApplyFill(cairo_t* cairo) const {
 			fill_.set_cairo_values(cairo);
-			glm::mat3 txfr(1.0f);
+		}
+		void ApplyTransforms(cairo_t* cairo) const {
 			for(auto t : transform_list_) {
-				txfr *= t->as_matrix();
+				t->Apply(cairo);
 			}
-			if(!transform_list_.empty()) {
-				set_cairo_matrix_from_glm(cairo, txfr);
+		}
+		void ApplyFillColor(cairo_t* cairo) const {
+			//fill_.apply_fill_color(cairo);
+			auto& fc = get_fill_color_stack().top();
+			cairo_set_source_rgba(cairo, fc.r()/255.0, fc.g()/255.0, fc.b()/255.0, fc.a()/255.0);
+		}
+		void ApplyStrokeColor(cairo_t* cairo) const {
+			//fill_.apply_stroke_color(cairo);
+			auto& sc = get_stroke_color_stack().top();
+			cairo_set_source_rgba(cairo, sc.r()/255.0, sc.g()/255.0, sc.b()/255.0, sc.a()/255.0);
+		}
+		void ApplyFontProperties(cairo_t* cairo) const {
+			// font_.apply_font(cairo);
+			auto style = font_.get_font_style();
+			cairo_font_slant_t slant;
+			switch(style) {
+			case font_properties::FontStyle::NORMAL: slant = CAIRO_FONT_SLANT_NORMAL; break;
+			case font_properties::FontStyle::ITALIC: slant = CAIRO_FONT_SLANT_ITALIC; break;
+			case font_properties::FontStyle::OBLIQUE: slant = CAIRO_FONT_SLANT_OBLIQUE; break;
+			default:
+				ASSERT_LOG(false, "Bad font style given.");
 			}
+			cairo_select_font_face(cairo, font_.get_font_family().c_str(), slant, CAIRO_FONT_WEIGHT_NORMAL);
+			/// XXX this is wrong because we need to inherit the parent values.
+			// This applies to most stuff.
+			cairo_set_font_size(cairo, font_.get_font_size(12));
+		}
+	protected:
+		const font_properties& GetFontProperties() const { return font_; }
+	private:
+		virtual void HandleCairoRender(cairo_t* cairo) const = 0;
+
+		void RenderSubPaths(cairo_t* cairo) const {
 			if(!cairo_has_current_point(cairo)) {
 				cairo_move_to(cairo, 0, 0);
 			}
-			render_cairo_path(cairo, path_);
-			cairo_fill_preserve(cairo);
-			// set the sroke color
-			auto strk = fill_.get_stroke_color(paint_ptr());
-			if(strk) {
-				cairo_set_source_rgb(cairo, strk->r()/255.0, strk->g()/255.0, strk->b()/255.0);
-			}
-			cairo_stroke(cairo);
+			
+			if(!path_.empty()) {
+				for(auto p : path_) {
+					p->cairo_render(cairo);
+				}
 
-			cairo_restore(cairo);
+				ApplyFillColor(cairo);
+				cairo_fill_preserve(cairo);
+				ApplyStrokeColor(cairo);
+				cairo_stroke(cairo);
+			}
+		}
+
+		fill fill_;
+		font_properties font_;
+		std::vector<TransformPtr> transform_list_;
+		std::vector<path_command_ptr> path_;
+	};
+	typedef std::shared_ptr<shapes> shapes_ptr;
+
+	class path : public shapes
+	{
+	public:
+		path(const ptree& pt) : shapes(pt, std::set<std::string>()) {
+		}
+		virtual ~path() {
 		}
 	private:
-		std::vector<transform_ptr> transform_list_;
-		std::vector<path_command_ptr> path_;
-		fill fill_;
+		virtual void HandleCairoRender(cairo_t* cairo) const override {
+			// doesn't need to do anything -- sub-path rendering is handled in base class
+		}
 	};
 
 	class circle : public shapes
 	{
 	public:
-		circle(const ptree& pt) {
+		// boost::assign::list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
+		circle(const ptree& pt) : shapes(pt, boost::assign::list_of("cx")("cy")("r")) {
 			// XXX We should probably directly access the following attributes 
 			// but meh.
 			auto attributes = pt.get_child_optional("<xmlattr>");
@@ -487,33 +710,6 @@ namespace svg
 						cy_ = svg_length(attr.second.data());
 					} else if(attr.first == "r") {
 						radius_ = svg_length(attr.second.data());
-					} else if(attr.first == "d") {
-						auto& d = attr.second.data();
-						if(!d.empty()) {
-							path_ = parse_path(d);
-						}
-					} else if(attr.first == "transform") {
-						transform_list_ = transform::factory(attr.second.data());
-					} else if(attr.first == "fill") {
-						fill_.set_color(attr.second.data());
-					} else if(attr.first == "stroke") {
-						fill_.set_stroke_color(attr.second.data());
-					} else if(attr.first == "stroke-width") {
-						fill_.set_stroke_width(attr.second.data());
-					} else if(attr.first == "fill-rule") {
-						fill_.set_fill_rule(attr.second.data());
-					} else if(attr.first == "stroke-linejoin") {
-						fill_.set_stroke_linejoin(attr.second.data());
-					} else if(attr.first == "stroke-linecap") {
-						fill_.set_stroke_linecap(attr.second.data());
-					} else if(attr.first == "stroke-miterlimit") {
-						fill_.set_stroke_miterlimit(attr.second.data());
-					} else if(attr.first == "stroke-dasharray") {
-						fill_.set_stroke_dasharray(attr.second.data());
-					} else if(attr.first == "color") {
-						fill_.set_color(attr.second.data());
-					} else {
-						std::cerr << "SVG: circle unhandled attribute: '" << attr.first << "' : '" << attr.second.data() << "'" << std::endl;
 					}
 				}
 			}
@@ -524,101 +720,166 @@ namespace svg
 					<< ")" << std::endl;
 			}
 		}
-		virtual ~circle() {
-		}
-		virtual void cairo_render(cairo_t* cairo) override {
-			cairo_save(cairo);
-			fill_.set_cairo_values(cairo);
-			glm::mat3 txfr(1.0f);
-			for(auto t : transform_list_) {
-				txfr *= t->as_matrix();
-			}
-			if(!transform_list_.empty()) {
-				set_cairo_matrix_from_glm(cairo, txfr);
-			}
-
+		virtual ~circle() {}
+	private:
+		virtual void HandleCairoRender(cairo_t* cairo) const override {
 			double cx = cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double cy = cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double r  = radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			cairo_arc(cairo, cx, cy, r, 0.0, 2 * M_PI);
-			// set the sroke color
-			auto strk = fill_.get_stroke_color(paint_ptr());
-			if(strk) {
-				cairo_fill_preserve(cairo);
-				cairo_set_source_rgb(cairo, strk->r()/255.0, strk->g()/255.0, strk->b()/255.0);
-				cairo_stroke(cairo);
-			} else {
-				cairo_fill(cairo);
-			}
 
-			cairo_move_to(cairo, 0, 0);
-			render_cairo_path(cairo, path_);
-			auto fill_color = fill_.get_color(paint_ptr());
-			if(fill_color) {
-				cairo_set_source_rgb(cairo, fill_color->r()/255.0, fill_color->g()/255.0, fill_color->b()/255.0);
-			}
-			// set the sroke color
-			if(strk) {
-				cairo_fill_preserve(cairo);
-				cairo_set_source_rgb(cairo, strk->r()/255.0, strk->g()/255.0, strk->b()/255.0);
-				cairo_stroke(cairo);
-			} else {
-				cairo_fill(cairo);
-				//cairo_set_source_rgb(cairo, 0.0, 0.0, 0.0);
-			}
-
-			cairo_restore(cairo);
+			ApplyFillColor(cairo);
+			cairo_fill_preserve(cairo);
+			ApplyStrokeColor(cairo);
+			cairo_stroke(cairo);
 		}
-	private:
+
 		svg_length cx_;
 		svg_length cy_;
 		svg_length radius_;
-		std::vector<transform_ptr> transform_list_;
+	};
+
+	class rectangle : public shapes
+	{
+	public:
+		rectangle(const ptree& pt) 
+			: shapes(pt, boost::assign::list_of("x")("y")("width")("height")("rx")("ry")), 
+			is_rounded_(false) {
+			// XXX We should probably directly access the following attributes 
+			// but meh.
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				for(auto& attr : *attributes) {
+					if(attr.first == "x") {
+						x_ = svg_length(attr.second.data());
+					} else if(attr.first == "y") {
+						y_ = svg_length(attr.second.data());
+					} else if(attr.first == "width") {
+						width_ = svg_length(attr.second.data());
+					} else if(attr.first == "height") {
+						height_ = svg_length(attr.second.data());
+					} else if(attr.first == "rx") {
+						rx_ = svg_length(attr.second.data());
+						is_rounded_ = true;
+					} else if(attr.first == "ry") {
+						ry_ = svg_length(attr.second.data());
+						is_rounded_ = true;
+					}
+				}
+			}
+			if(0) {
+				std::cerr << "SVG: RECTANGLE(" << x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+					<< "," << y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+					<< "," << width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+					<< "," << height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+					<< ")" << std::endl;
+			}
+		}
+		virtual ~rectangle() {}
+	private:
+		virtual void HandleCairoRender(cairo_t* cairo) const override {
+			ASSERT_LOG(is_rounded_ == false, "XXX we don't support rounded rectangles -- yet");
+			double x = x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double y = y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double rx = rx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double ry = ry_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double w  = width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double h  = height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+
+			cairo_rectangle(cairo, x, y, w, h);
+
+			ApplyFillColor(cairo);
+			cairo_fill_preserve(cairo);
+			ApplyStrokeColor(cairo);
+			cairo_stroke(cairo);
+		}
+		svg_length x_;
+		svg_length y_;
+		svg_length rx_;
+		svg_length ry_;
+		svg_length width_;
+		svg_length height_;
+		bool is_rounded_;
+		std::vector<TransformPtr> transform_list_;
 		std::vector<path_command_ptr> path_;
-		fill fill_;
+	};
+
+	class text : public shapes
+	{
+	public:
+		text(const ptree& pt) 
+			: shapes(pt, boost::assign::list_of("x")("y")("dx")("dy")("rotate")("textLength")("lengthAdjust")),
+			adjust_(LengthAdjust::SPACING)
+		{
+			// XXX should we use provided <xmltext> instead?
+			text_ = pt.get_value<std::string>();
+
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				for(auto& attr : *attributes) {
+					if(attr.first == "x") {
+						//x_ = svg_length(attr.second.data());
+					} else if(attr.first == "y") {
+					} else if(attr.first == "dx") {
+					} else if(attr.first == "dy") {
+					} else if(attr.first == "rotate") {
+					} else if(attr.first == "textLength") {
+					} else if(attr.first == "lengthAdjust") {
+						if(attr.second.data() == "spacing") {
+							adjust_ = LengthAdjust::SPACING;
+						} else if(attr.second.data() == "spacingAndGlyphs") {
+							adjust_ = LengthAdjust::SPACING_AND_GLYPHS;
+						} else {
+							ASSERT_LOG(false, "Unrecognised spacing value: " << attr.second.data());
+						}
+					}
+				}
+			}
+
+		}
+		virtual ~text() {}
+	private:
+		virtual void HandleCairoRender(cairo_t* cairo) const override {
+			ApplyFillColor(cairo);
+			/// need parent value.
+			double letter_spacing = GetFontProperties().get_letter_spacing(0);
+			if(letter_spacing > 0) {
+				for(auto c : text_) {
+					const char s[2] = {c,0};
+					cairo_show_text(cairo, s);
+					cairo_rel_move_to(cairo, letter_spacing, 0);
+				}
+			} else {
+				cairo_show_text(cairo, text_.c_str());
+			}
+		}
+		std::string text_;
+		std::vector<svg_length> x_;
+		std::vector<svg_length> y_;
+		std::vector<svg_length> dx_;
+		std::vector<svg_length> dy_;
+		std::vector<double> rotate_;
+		svg_length text_length_;
+		enum class LengthAdjust {
+			SPACING,
+			SPACING_AND_GLYPHS,
+		};
+		LengthAdjust adjust_;
 	};
 
 	class group : public shapes
 	{
 	public:
-		group(const ptree& pt) {
-			
-			auto attributes = pt.get_child_optional("<xmlattr>");
-			if(attributes) {
-				for(auto& attr : *attributes) {
-					if(attr.first == "transform") {
-						transform_list_ = transform::factory(attr.second.data());
-					} else if(attr.first == "fill") {
-						fill_.set_color(attr.second.data());
-					} else if(attr.first == "stroke") {
-						fill_.set_stroke_color(attr.second.data());
-					} else if(attr.first == "stroke-width") {
-						fill_.set_stroke_width(attr.second.data());
-					} else if(attr.first == "fill-rule") {
-						fill_.set_fill_rule(attr.second.data());
-					} else if(attr.first == "stroke-linejoin") {
-						fill_.set_stroke_linejoin(attr.second.data());
-					} else if(attr.first == "stroke-linecap") {
-						fill_.set_stroke_linecap(attr.second.data());
-					} else if(attr.first == "stroke-miterlimit") {
-						fill_.set_stroke_miterlimit(attr.second.data());
-					} else if(attr.first == "stroke-dasharray") {
-						fill_.set_stroke_dasharray(attr.second.data());
-					} else if(attr.first == "color") {
-						fill_.set_color(attr.second.data());
-					} else {
-						std::cerr << "SVG: group unhandled attribute: '" << attr.first << "' : '" << attr.second.data() << "'" << std::endl;
-					}
-				}
-			}
-
+		group(const ptree& pt) : shapes(pt,std::set<std::string>()) {
 			for(auto& v : pt) {
 				if(v.first == "path") {
 					shapes_.emplace_back(new path(v.second));
 				} else if(v.first == "circle") {
 					shapes_.emplace_back(new circle(v.second));
-				//} else if(v.first == "rect") {
-				//	shapes_.emplace_back(new rect(v.second));
+				} else if(v.first == "rect") {
+					shapes_.emplace_back(new rectangle(v.second));
+				} else if(v.first == "text") {
+					shapes_.emplace_back(new text(v.second));
 				//} else if(v.first == "ellipse") {
 				//	shapes_.emplace_back(new ellipse(v.second));
 				//} else if(v.first == "polyline") {
@@ -631,6 +892,8 @@ namespace svg
 					// XXX
 				} else if(v.first == "<xmlattr>") {
 					// ignore
+				} else if(v.first == "<xmlcomment>") {
+					// ignore
 				} else {
 					std::cerr << "SVG: group unhandled child element: '" << v.first << "' : '" << v.second.data() << "'" << std::endl;
 				}
@@ -638,24 +901,12 @@ namespace svg
 		}
 		virtual ~group() {
 		}
-		virtual void cairo_render(cairo_t* cairo) override {
-			cairo_save(cairo);
-			fill_.set_cairo_values(cairo);
-			glm::mat3 txfr(1.0f);
-			for(auto t : transform_list_) {
-				txfr *= t->as_matrix();
-			}
-			if(!transform_list_.empty()) {
-				set_cairo_matrix_from_glm(cairo, txfr);
-			}
+		virtual void HandleCairoRender(cairo_t* cairo) const override {
 			for(auto s : shapes_) {
-				s->cairo_render(cairo);
+				s->CairoRender(cairo);
 			}
-			cairo_restore(cairo);
 		}
 	private:
-		fill fill_;
-		std::vector<transform_ptr> transform_list_;
 		std::vector<shapes_ptr> shapes_;
 	};
 
@@ -697,15 +948,17 @@ namespace svg
 					// XXX
 				} else if(v.first == "<xmlattr>") {
 					// ignore
+				} else if(v.first == "<xmlcomment>") {
+					// ignore
 				} else {
 					std::cerr << "SVG: svg unhandled child element: " << v.first << " : " << v.second.data() << std::endl;
 				}
 			}
 
 		}
-		void cairo_render(cairo_t* cairo) const {
+		void CairoRender(cairo_t* cairo) const {
 			for(auto s : shapes_) {
-				s->cairo_render(cairo);
+				s->CairoRender(cairo);
 			}
 		}
 	private:
@@ -755,7 +1008,7 @@ namespace svg
 	{
 	}
 
-	void parse::cairo_render(cairo_t* cairo) const
+	void parse::CairoRender(cairo_t* cairo) const
 	{
 		cairo_set_source_rgb(cairo, 0.0, 0.0, 0.0);
 		cairo_set_line_cap(cairo, CAIRO_LINE_CAP_BUTT);
@@ -763,9 +1016,13 @@ namespace svg
 		cairo_set_miter_limit(cairo, 4.0);
 		cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_EVEN_ODD);
 		cairo_set_line_width(cairo, 1.0);
+		get_fill_color_stack().emplace(0,0,0,1);
+		get_stroke_color_stack().emplace(0,0,0,0);
 
 		for(auto p : svg_data_) {
-			p->cairo_render(cairo);
+			p->CairoRender(cairo);
 		}
+		ASSERT_LOG(get_fill_color_stack().size() == 1, "get_fill_color_stack() stack bug on exit");
+		ASSERT_LOG(get_stroke_color_stack().size() == 1, "get_stroke_color_stack() stack bug on exit");
 	}
 }

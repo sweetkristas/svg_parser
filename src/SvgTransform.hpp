@@ -26,32 +26,33 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "glm/glm.hpp"
+#include <cairo/cairo.h>
 
 namespace svg
 {
-	class transform;
-	typedef std::shared_ptr<transform> transform_ptr;
+	class Transform;
+	typedef std::shared_ptr<Transform> TransformPtr;
 
-	class transform
+	class Transform
 	{
 	public:
-		const glm::mat3& as_matrix() const { return mat_; }
-		std::string as_string() const;
-		static std::vector<transform_ptr> factory(const std::string& s);
+		virtual ~Transform();
+		virtual std::string as_string() const = 0;
+		static std::vector<TransformPtr> Factory(const std::string& s);
+		void Apply(cairo_t* cairo);
 	protected:
-		enum TransformType {
-			TRANSFORM_MATRIX,
-			TRANSFORM_TRANSLATE,
-			TRANSFORM_SCALE,
-			TRANSFORM_ROTATE,
-			TRANSFORM_SKEW_X,
-			TRANSFORM_SKEW_Y,
+		enum class TransformType {
+			MATRIX,
+			TRANSLATE,
+			SCALE,
+			ROTATE,
+			SKEW_X,
+			SKEW_Y,
 		};
-		transform(TransformType tt);
+		Transform(TransformType tt);
 	private:
+		virtual void HandleApply(cairo_t* cairo) = 0;
+
 		TransformType type_;
-		glm::mat3 mat_;
 	};
 }

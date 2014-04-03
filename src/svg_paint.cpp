@@ -31,6 +31,12 @@ namespace svg
 {
 	namespace 
 	{
+		template<typename T>
+		T clamp(T value, T min_val, T max_val)
+		{
+			return std::min(max_val, std::max(value, min_val));
+		}
+
 		struct RGB
 		{
 			RGB() : r(0), g(0), b(0) {
@@ -215,6 +221,15 @@ namespace svg
 			}
 			return value;
 		}
+	}
+
+	paint::paint(int r, int g, int b, int a)
+		: r_(clamp(r,0,255)),
+		g_(clamp(g,0,255)),
+		b_(clamp(b,0,255)),
+		a_(clamp(a,0,255)),
+		no_color_(false)
+	{
 	}
 
 	paint::paint(const std::string& s)

@@ -40,7 +40,7 @@ namespace svg
 		parse(const std::string& filename);
 		~parse();
 
-		void cairo_render(cairo_t* cairo) const;
+		void CairoRender(cairo_t* cairo) const;
 	private:
 		std::vector<svg_ptr> svg_data_;
 	};

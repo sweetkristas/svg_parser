@@ -1,6 +1,6 @@
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
 <g>
-<path d="M 125,75 a100,50 0 0,1 100,50" fill="#0f0" stroke="#f00" stroke-width="6"/>
+<path d="M 125,75 a100,50 0 1,1 100,50" fill="#0f0" stroke="#f00" stroke-width="6"/>
 <!-- style="fill:none; stroke:red; stroke-width:6" -->
 </g>
 </svg>

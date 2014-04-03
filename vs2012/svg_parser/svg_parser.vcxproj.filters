@@ -33,10 +33,10 @@
     <ClCompile Include="..\..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_tranform.cpp">
+    <ClCompile Include="..\..\src\svg_paint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_paint.cpp">
+    <ClCompile Include="..\..\src\SvgTransform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,9 +62,6 @@
     <ClInclude Include="..\..\src\utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_tranform.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\svg_paint.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -72,6 +69,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\profile_timer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\SvgTransform.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

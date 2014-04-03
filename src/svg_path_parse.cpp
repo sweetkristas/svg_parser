@@ -216,21 +216,15 @@ namespace svg
 				double x1, y1;
 				cairo_get_current_point(cairo, &x1, &y1);
 
+				ASSERT_LOG(rx_ > ry_, "Length of major axis is smaller than minor axis");
+
 				// calculate some ellipse stuff
 				// a is the length of the major axis
 				// b is the length of the minor axis
-				double a, b;
-				bool swap_axis = false;
-				if(ry_ > rx_) {
-					a = ry_;
-					b = rx_;
-					swap_axis = true;
-				} else {
-					a = rx_;
-					b = ry_;
-				}
-				const double x2 = x_;
-				const double y2 = y_;
+				const double a = rx_;
+				const double b = ry_;
+				const double x2 = absolute_ ? x_ : x_ + x1;
+				const double y2 = absolute_ ? y_ : y_ + y1;
 				
 				// http://stackoverflow.com/questions/197649/how-to-calculate-center-of-an-ellipse-by-two-points-and-radius-sizes
 				const double r1 = (x1 - x2) / (2 * a);
@@ -242,8 +236,8 @@ namespace svg
 				// t2 is the angle to the second point.
 				double t2 = a1-a2;
 				// (xc,yc) is the centre of the ellipse 
-				const double xc = x1 - a*cos(t1);
-				const double yc = y1 - b*sin(t1);
+				const double xc = x1 + a*cos(t1);
+				const double yc = y1 + b*sin(t1);
 
 				// prevent drawing a line from current position to start of arc.
 				cairo_new_sub_path(cairo);
@@ -261,20 +255,20 @@ namespace svg
 				// since we're going to scale/translate the cairo arc, we make it based on a unit circle.
 				if(large_arc_flag_) {
 					if(sweep_flag_) {
-						cairo_arc_negative(cairo, 0.0, 0.0, 1.0, t2, t1);
-					} else {
 						cairo_arc_negative(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
+					} else {
+						cairo_arc(cairo, 0.0, 0.0, 1.0, t1, t2);
 					}
 				} else {
 					if(sweep_flag_) {
-						cairo_arc(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
+						cairo_arc_negative(cairo, 0.0, 0.0, 1.0, t1, t2);
 					} else {
-						cairo_arc(cairo, 0.0, 0.0, 1.0, t2, t1);
+						cairo_arc(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
 					}
 				}
 
 				cairo_restore(cairo);
-				cairo_move_to(cairo, x_, y_);
+				cairo_move_to(cairo, x2, y2);
 				break;
 			}
 		}

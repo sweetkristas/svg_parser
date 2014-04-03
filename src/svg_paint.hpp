@@ -33,6 +33,7 @@ namespace svg
 	{
 	public:
 		paint(const std::string& s);
+		paint(int r, int g, int b, int a=255);
 		virtual ~paint();
 		bool has_color() const { return !no_color_; }
 		uint8_t r() const { return r_; }

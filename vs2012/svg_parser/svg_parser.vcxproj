@@ -17,7 +17,7 @@
     <ClCompile Include="..\..\src\svg_paint.cpp" />
     <ClCompile Include="..\..\src\svg_parse.cpp" />
     <ClCompile Include="..\..\src\svg_path_parse.cpp" />
-    <ClCompile Include="..\..\src\svg_tranform.cpp" />
+    <ClCompile Include="..\..\src\SvgTransform.cpp" />
     <ClCompile Include="..\..\src\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -30,7 +30,7 @@
     <ClInclude Include="..\..\src\svg_paint.hpp" />
     <ClInclude Include="..\..\src\svg_parse.hpp" />
     <ClInclude Include="..\..\src\svg_path_parse.hpp" />
-    <ClInclude Include="..\..\src\svg_tranform.hpp" />
+    <ClInclude Include="..\..\src\SvgTransform.hpp" />
     <ClInclude Include="..\..\src\utils.hpp" />
   </ItemGroup>
   <ItemGroup>

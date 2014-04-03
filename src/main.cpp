@@ -14,9 +14,11 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	//svg::parse p("c:\\projects\\svg_parser\\icons\\spider-face.svg");	
+	//svg::parse p("c:\\projects\\svg_parser\\icons\\spider-face.svg");
+	//svg::parse p("c:\\projects\\svg_parser\\icons\\logo-faith.svg");
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\zigzag-tune.svg");
-	svg::parse p("c:\\projects\\svg_parser\\icons\\test-arc.svg");
+	//svg::parse p("c:\\projects\\svg_parser\\icons\\test-arc.svg");
+	svg::parse p("c:\\projects\\svg_parser\\icons\\soccer-ball.svg");
 	/*const std::string root_path("c:\\projects\\svg_parser\\icons\\");
 	std::vector<std::string> files;
 	sys::get_files_in_dir(root_path, &files);
@@ -32,7 +34,7 @@ int main(int argc, char* argv[])
 	cairo_t* cairo = cairo_create(surface);
 	{
 		profile::manager pman("cairo_render");
-		p.cairo_render(cairo);
+		p.CairoRender(cairo);
 	}
 
 	cairo_surface_write_to_png(surface, "c:\\projects\\svg_parser\\test.png");
