@@ -14,11 +14,16 @@ namespace
 
 int main(int argc, char* argv[])
 {
+	if(argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
+		return 1;
+	}
+	svg::Parse p(argv[1]);
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\spider-face.svg");
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\logo-faith.svg");
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\zigzag-tune.svg");
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\test-arc.svg");
-	svg::parse p("c:\\projects\\svg_parser\\icons\\soccer-ball.svg");
+	//svg::parse p("c:\\projects\\svg_parser\\icons\\soccer-ball.svg");
 	/*const std::string root_path("c:\\projects\\svg_parser\\icons\\");
 	std::vector<std::string> files;
 	sys::get_files_in_dir(root_path, &files);
@@ -51,6 +56,7 @@ int main(int argc, char* argv[])
 	int h = height;
 	Uint32 wnd_flags = SDL_WINDOW_OPENGL;
 
+	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 	window_.reset(SDL_CreateWindow(title.c_str(), x, y, w, h, wnd_flags), [&](SDL_Window* wnd){
 		SDL_DestroyRenderer(renderer_);
 		SDL_DestroyWindow(wnd);
@@ -66,8 +72,9 @@ int main(int argc, char* argv[])
 
 	auto tex_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 	SDL_UpdateTexture(tex_, NULL, cairo_image_surface_get_data(surface), cairo_image_surface_get_stride(surface));
-	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
-	
+	SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE);
+
 	SDL_Event e;
 	bool done = false;
 	while(!done) {

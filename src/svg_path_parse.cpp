@@ -48,233 +48,297 @@ reflected point (i.e., (newx1, newy1), the first control point of the current pa
 
 namespace svg
 {
-	const bool print_debug_info = false;
+	namespace 
+	{
+		const bool print_debug_info = false;
+	}
 
-	path_command::path_command() : ins_(CLOSEPATH) {
-		if(print_debug_info) {
-			std::cerr << "XXX: Closepath" << std::endl;
-		}
-	}
-	// move to/line to constructor
-	path_command::path_command(PathInstruction ins, bool absolute, double x, double y) 
-		: ins_(ins), 
-		absolute_(absolute), 
-		x_(x), y_(y) 
-	{
-		if(print_debug_info) {
-			if(ins == MOVETO) {
-				std::cerr << "XXX: MoveTo " << x << "," << y << (absolute ? " Abs" : " Rel") << std::endl;
-			} else {
-				std::cerr << "XXX: LineTo " << x << "," << y << std::endl;
-			}
-		}
-	}
-	// horz/vert line constructor
-	path_command::path_command(PathInstruction ins, bool absolute, double v)
-		: ins_(ins),
-		absolute_(absolute),
-		v_(v)
-	{
-		if(print_debug_info) {
-			if(ins == LINETO_H) {
-				std::cerr << "XXX: LineTo-H " << v << std::endl;
-			} else {
-				std::cerr << "XXX: LineTo-V " << v << std::endl;
-			}
-		}
-	}
-	// cubic bezier constructor
-	path_command::path_command(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y, double cp2x, double cp2y)
-		: ins_(CUBIC_BEZIER), 
-		absolute_(absolute), smooth_(smooth),
-		x_(x), y_(y), 
-		cp1x_(cp1x), cp1y_(cp1y), 
-		cp2x_(cp2x), cp2y_(cp2y) 
-	{
-		if(print_debug_info) {
-			if(smooth) {
-				std::cerr << "XXX: CubicBezier " << x << "," << y << " " << cp1x << "," << cp1y << (absolute ? " Abs" : " Rel") << std::endl;
-			} else {
-				std::cerr << "XXX: CubicBezier " << x << "," << y << " " << cp1x << "," << cp1y << " " << cp2x << "," << cp2y << (absolute ? " Abs" : " Rel") << std::endl;
-			}
-		}
-	}
-	// quadratic bezier constructor
-	path_command::path_command(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y) 
-		: ins_(QUADRATIC_BEZIER), 
-		absolute_(absolute), smooth_(smooth),
-		x_(x), y_(y), 
-		cp1x_(cp1x), cp1y_(cp1y) 
-	{
-		if(print_debug_info) {
-			if(smooth) {
-				std::cerr << "XXX: QuadraticBezier " << x << "," << y << " " << (absolute ? " Abs" : " Rel") << std::endl;
-			} else {
-				std::cerr << "XXX: QuadraticBezier " << x << "," << y << " " << cp1x << "," << cp1y << (absolute ? " Abs" : " Rel") << std::endl;
-			}
-		}
-	}
-	// elliptical arc constructor
-	path_command::path_command(bool absolute, double x, double y, double rx, double ry, double x_axis_rot, bool large_arc, bool sweep) 
-		: ins_(ARC), absolute_(absolute), 
-		x_(x), y_(y), 
-		rx_(rx), ry_(ry), 
-		x_axis_rotation_(x_axis_rot), 
-		large_arc_flag_(large_arc), 
-		sweep_flag_(sweep) 
-	{
-		if(print_debug_info) {
-			std::cerr << "XXX: Arc " << x << "," << y << " " << rx << "," << ry << " " << x_axis_rot << " large-arc-flag:" << (large_arc?"true":"false") << " sweep-flag:" << (sweep?"true":"false") << (absolute ? " Abs" : " Rel") << std::endl;
-		}
-	}
-	// Render to whatever back-end we have at the moment, on entry x&y are the current position.
-	void path_command::render(float* x, float* y) 
+	PathCommand::PathCommand(PathInstruction ins, bool absolute)
+		: ins_(ins), absolute_(absolute)
 	{
 	}
 
-	void path_command::cairo_render(cairo_t* cairo)
+	PathCommand::~PathCommand()
 	{
-		switch(ins_) {
-			case MOVETO:
-				if(absolute_) {
-					cairo_move_to(cairo, x_, y_); 
-				} else {
-					cairo_rel_move_to(cairo, x_, y_);
-				}
-				break;
-			case LINETO:
-				if(absolute_) {
-					cairo_line_to(cairo, x_, y_);
-				} else {
-					cairo_rel_line_to(cairo, x_, y_);
-				}
-				break;
-			case LINETO_H:
-				if(absolute_) {
-					double cx, cy;
-					cairo_get_current_point(cairo, &cx, &cy);
-					cairo_line_to(cairo, v_, cy);
-				} else {
-					cairo_rel_line_to(cairo, v_, 0.0);
-				}
-				break;
-			case LINETO_V:
-				if(absolute_) {
-					double cx, cy;
-					cairo_get_current_point(cairo, &cx, &cy);
-					cairo_line_to(cairo, cx, v_);
-				} else {
-					cairo_rel_line_to(cairo, 0.0, v_);
-				}
-				break;
-			case CLOSEPATH:
-				cairo_close_path(cairo);
-				break;
-			case CUBIC_BEZIER:
-				if(smooth_) {
-					ASSERT_LOG(false, "XXX: Implement smooth bezier's");
-					//cp1x_ = ?;
-					//cp1y_ = ?;
-				}
-				if(absolute_) {
-					cairo_curve_to(cairo, cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
-				} else {
-					cairo_rel_curve_to(cairo, cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
-				}
-				break;
-			case QUADRATIC_BEZIER: {
-				if(smooth_) {
-					ASSERT_LOG(false, "XXX: Implement smooth bezier's");
-					//cp1x_ = ?;
-					//cp1y_ = ?;
-				}
-				double c0x, c0y;
-				double dx, dy;
-				double acp1x, acp1y;
-				cairo_get_current_point(cairo, &c0x, &c0y);
-				// Simple quadratic -> cubic conversion.
-				dx = x_;
-				dy = y_;
-				acp1x = cp1x_;
-				acp1y = cp1y_;
-				if(!absolute_) {
-					dx += c0x;
-					dy += c0y;
-					acp1x += c0x;
-					acp1y += c0y;
-				}
-				double cp1x = c0x + 2.0/3.0 * (acp1x - c0x);
-				double cp1y = c0y + 2.0/3.0 * (acp1y - c0y);
-				double cp2x = dx + 2.0/3.0 * (acp1x - dx);
-				double cp2y = dy + 2.0/3.0 * (acp1y - dy);
+	}
 
-				cairo_curve_to(cairo, cp1x, cp1y, cp2x, cp2y, x_, y_);
-				break;
-			}
-			case ARC: {
-				cairo_save(cairo);
-				double x1, y1;
-				cairo_get_current_point(cairo, &x1, &y1);
+	void PathCommand::CairoRender(cairo_t* cairo)
+	{
+		HandleCairoRender(cairo);
 
-				ASSERT_LOG(rx_ > ry_, "Length of major axis is smaller than minor axis");
-
-				// calculate some ellipse stuff
-				// a is the length of the major axis
-				// b is the length of the minor axis
-				const double a = rx_;
-				const double b = ry_;
-				const double x2 = absolute_ ? x_ : x_ + x1;
-				const double y2 = absolute_ ? y_ : y_ + y1;
-				
-				// http://stackoverflow.com/questions/197649/how-to-calculate-center-of-an-ellipse-by-two-points-and-radius-sizes
-				const double r1 = (x1 - x2) / (2 * a);
-				const double r2 = (y2 - y1) / (2 * b);
-				const double a1 = std::atan2(r1, r2);
-				const double a2 = std::asin(std::sqrt(r1*r1+r2*r2));
-				// t1 is the angle to the first point
-				double t1 = a1+a2;
-				// t2 is the angle to the second point.
-				double t2 = a1-a2;
-				// (xc,yc) is the centre of the ellipse 
-				const double xc = x1 + a*cos(t1);
-				const double yc = y1 + b*sin(t1);
-
-				// prevent drawing a line from current position to start of arc.
-				cairo_new_sub_path(cairo);
-
-				cairo_matrix_t mxy;
-				cairo_matrix_init_identity(&mxy);
-				if((large_arc_flag_ && sweep_flag_ ) || (!large_arc_flag_ && !sweep_flag_ )) {
-					cairo_matrix_translate(&mxy, xc, yc);
-				} else {
-					cairo_matrix_translate(&mxy, xc-a, yc+b);
-				}
-				cairo_matrix_rotate(&mxy, x_axis_rotation_);
-				cairo_matrix_scale(&mxy, a, b);
-				cairo_transform(cairo, &mxy);
-				// since we're going to scale/translate the cairo arc, we make it based on a unit circle.
-				if(large_arc_flag_) {
-					if(sweep_flag_) {
-						cairo_arc_negative(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
-					} else {
-						cairo_arc(cairo, 0.0, 0.0, 1.0, t1, t2);
-					}
-				} else {
-					if(sweep_flag_) {
-						cairo_arc_negative(cairo, 0.0, 0.0, 1.0, t1, t2);
-					} else {
-						cairo_arc(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
-					}
-				}
-
-				cairo_restore(cairo);
-				cairo_move_to(cairo, x2, y2);
-				break;
-			}
-		}
 		auto status = cairo_status(cairo);
 		ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status));
 	}
+
+	class MoveToCommand : public PathCommand
+	{
+	public:
+		MoveToCommand(bool absolute, double x, double y)
+			: PathCommand(PathInstruction::MOVETO, absolute), 
+			x_(x), 
+			y_(y) 
+		{
+		}
+		virtual ~MoveToCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			if(IsAbsolute()) {
+				cairo_move_to(cairo, x_, y_); 
+			} else {
+				cairo_rel_move_to(cairo, x_, y_);
+			}
+		}
+		double x_;
+		double y_;
+	};
+
+	class LineToCommand : public PathCommand
+	{
+	public:
+		LineToCommand(bool absolute, double x, double y)
+			: PathCommand(PathInstruction::LINETO, absolute),
+			x_(x),
+			y_(y)
+		{
+		}
+		virtual ~LineToCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			if(IsAbsolute()) {
+				cairo_line_to(cairo, x_, y_);
+			} else {
+				cairo_rel_line_to(cairo, x_, y_);
+			}
+		}
+		double x_;
+		double y_;
+	};
+
+	class ClosePathCommand : public PathCommand
+	{
+	public:
+		ClosePathCommand() : PathCommand(PathInstruction::CLOSEPATH, true)
+		{
+		}
+		virtual ~ClosePathCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			cairo_close_path(cairo);
+		}
+	};
+
+	class LineToHCommand : public PathCommand
+	{
+	public:
+		LineToHCommand(bool absolute, double x)
+			: PathCommand(PathInstruction::LINETO_H, absolute),
+			x_(x)
+		{
+		}
+		virtual ~LineToHCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			if(IsAbsolute()) {
+				double cx, cy;
+				cairo_get_current_point(cairo, &cx, &cy);
+				cairo_line_to(cairo, x_, cy);
+			} else {
+				cairo_rel_line_to(cairo, x_, 0.0);
+			}
+		}
+		double x_;
+	};
+
+	class LineToVCommand : public PathCommand
+	{
+	public:
+		LineToVCommand(bool absolute, double y)
+			: PathCommand(PathInstruction::LINETO_V, absolute),
+			y_(y)
+		{
+		}
+		virtual ~LineToVCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			if(IsAbsolute()) {
+				double cx, cy;
+				cairo_get_current_point(cairo, &cx, &cy);
+				cairo_line_to(cairo, cx, y_);
+			} else {
+				cairo_rel_line_to(cairo, 0.0, y_);
+			}
+		}
+		double y_;
+	};
+
+	class CubicBezierCommand : public PathCommand
+	{
+	public:
+		CubicBezierCommand(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y, double cp2x, double cp2y)
+			: PathCommand(PathInstruction::CUBIC_BEZIER, absolute),
+			smooth_(smooth),
+			x_(x), y_(y), 
+			cp1x_(cp1x), cp1y_(cp1y), 
+			cp2x_(cp2x), cp2y_(cp2y)
+		{
+		}
+		virtual ~CubicBezierCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			if(smooth_) {
+				ASSERT_LOG(false, "XXX: Implement smooth cubic bezier's");
+				//cp1x_ = ?;
+				//cp1y_ = ?;
+			}
+			if(IsAbsolute()) {
+				cairo_curve_to(cairo, cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
+			} else {
+				cairo_rel_curve_to(cairo, cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
+			}
+		}
+		bool smooth_;
+		double x_;
+		double y_;
+		// control point one for cubic bezier
+		double cp1x_;
+		double cp1y_;
+		// control point two for cubic bezier
+		double cp2x_;
+		double cp2y_;
+	};
+
+	class QuadraticBezierCommand : public PathCommand
+	{
+	public:
+		QuadraticBezierCommand(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y)
+			: PathCommand(PathInstruction::CUBIC_BEZIER, absolute),
+			smooth_(smooth),
+			x_(x), y_(y), 
+			cp1x_(cp1x), cp1y_(cp1y)
+		{
+		}
+		virtual ~QuadraticBezierCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			if(smooth_) {
+				ASSERT_LOG(false, "XXX: Implement smooth quadratic bezier's");
+				//cp1x_ = ?;
+				//cp1y_ = ?;
+			}
+			double c0x, c0y;
+			double dx, dy;
+			double acp1x, acp1y;
+			cairo_get_current_point(cairo, &c0x, &c0y);
+			// Simple quadratic -> cubic conversion.
+			dx = x_;
+			dy = y_;
+			acp1x = cp1x_;
+			acp1y = cp1y_;
+			if(!IsAbsolute()) {
+				dx += c0x;
+				dy += c0y;
+				acp1x += c0x;
+				acp1y += c0y;
+			}
+			double cp1x = c0x + 2.0/3.0 * (acp1x - c0x);
+			double cp1y = c0y + 2.0/3.0 * (acp1y - c0y);
+			double cp2x = dx + 2.0/3.0 * (acp1x - dx);
+			double cp2y = dy + 2.0/3.0 * (acp1y - dy);
+
+			cairo_curve_to(cairo, cp1x, cp1y, cp2x, cp2y, x_, y_);
+		}
+		bool smooth_;
+		double x_;
+		double y_;
+		// control point for quadratic bezier
+		double cp1x_;
+		double cp1y_;
+	};
+
+	class EllipticalArcCommand : public PathCommand
+	{
+	public:
+		EllipticalArcCommand(bool absolute, double x, double y, double rx, double ry, double x_axis_rot, bool large_arc, bool sweep)
+			: PathCommand(PathInstruction::CUBIC_BEZIER, absolute),
+			x_(x), y_(y), 
+			rx_(rx), ry_(ry), 
+			x_axis_rotation_(x_axis_rot), 
+			large_arc_flag_(large_arc), 
+			sweep_flag_(sweep) 
+		{
+		}
+		virtual ~EllipticalArcCommand() {}
+	private:
+		void HandleCairoRender(cairo_t* cairo) override {
+			cairo_save(cairo);
+			double x1, y1;
+			cairo_get_current_point(cairo, &x1, &y1);
+
+			ASSERT_LOG(rx_ > ry_, "Length of major axis is smaller than minor axis");
+
+			// calculate some ellipse stuff
+			// a is the length of the major axis
+			// b is the length of the minor axis
+			const double a = rx_;
+			const double b = ry_;
+			const double x2 = IsAbsolute() ? x_ : x_ + x1;
+			const double y2 = IsAbsolute() ? y_ : y_ + y1;
+				
+			// http://stackoverflow.com/questions/197649/how-to-calculate-center-of-an-ellipse-by-two-points-and-radius-sizes
+			const double r1 = (x1 - x2) / (2 * a);
+			const double r2 = (y2 - y1) / (2 * b);
+			const double a1 = std::atan2(r1, r2);
+			const double a2 = std::asin(std::sqrt(r1*r1+r2*r2));
+			// t1 is the angle to the first point
+			double t1 = a1+a2;
+			// t2 is the angle to the second point.
+			double t2 = a1-a2;
+			// (xc,yc) is the centre of the ellipse 
+			const double xc = x1 + a*cos(t1);
+			const double yc = y1 + b*sin(t1);
+
+			// prevent drawing a line from current position to start of arc.
+			cairo_new_sub_path(cairo);
+
+			cairo_matrix_t mxy;
+			cairo_matrix_init_identity(&mxy);
+			if((large_arc_flag_ && sweep_flag_ ) || (!large_arc_flag_ && !sweep_flag_ )) {
+				cairo_matrix_translate(&mxy, xc, yc);
+			} else {
+				cairo_matrix_translate(&mxy, xc-a, yc+b);
+			}
+			cairo_matrix_rotate(&mxy, x_axis_rotation_);
+			cairo_matrix_scale(&mxy, a, b);
+			cairo_transform(cairo, &mxy);
+			// since we're going to scale/translate the cairo arc, we make it based on a unit circle.
+			if(large_arc_flag_) {
+				if(sweep_flag_) {
+					cairo_arc_negative(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
+				} else {
+					cairo_arc(cairo, 0.0, 0.0, 1.0, t1, t2);
+				}
+			} else {
+				if(sweep_flag_) {
+					cairo_arc_negative(cairo, 0.0, 0.0, 1.0, t1, t2);
+				} else {
+					cairo_arc(cairo, 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
+				}
+			}
+
+			cairo_restore(cairo);
+			cairo_move_to(cairo, x2, y2);
+		}
+		bool smooth_;
+		double x_;
+		double y_;
+		// elliptical arc radii
+		double rx_;
+		double ry_;
+		// arc x axis rotation
+		double x_axis_rotation_;
+		bool large_arc_flag_;
+		bool sweep_flag_;
+	};
 
 
 	class path_parser
@@ -367,7 +431,7 @@ namespace svg
 			double x, y;
 			match_coordinate_pair(x, y);
 			// emit
-			cmds_.emplace_back(new path_command(path_command::MOVETO, absolute, x, y));
+			cmds_.emplace_back(new MoveToCommand(absolute, x, y));
 			match_comma_wsp_opt();
 			return match_lineto_argument_sequence(absolute);
 		}
@@ -376,7 +440,7 @@ namespace svg
 			double x, y;
 			if(match_coordinate_pair(x, y)) {
 				// emit
-				cmds_.emplace_back(new path_command(path_command::LINETO, absolute, x, y));
+				cmds_.emplace_back(new LineToCommand(absolute, x, y));
 				match_comma_wsp_opt();
 				match_lineto_argument_sequence(absolute);
 			}
@@ -463,7 +527,7 @@ namespace svg
 			path_.pop_front();
 			switch(c) {
 				case 'Z': case 'z': 
-					cmds_.emplace_back(new path_command()); 
+					cmds_.emplace_back(new ClosePathCommand()); 
 					break;
 				case 'L':  case 'l': 
 					match_wsp_star();
@@ -471,11 +535,11 @@ namespace svg
 					break;
 				case 'H': case 'h':
 					match_wsp_star();
-					match_single_coordinate_argument_sequence(path_command::LINETO_H, c == 'H' ? true : false);
+					match_single_coordinate_argument_sequence(PathInstruction::LINETO_H, c == 'H' ? true : false);
 					break;
 				case 'V': case 'v':
 					match_wsp_star();
-					match_single_coordinate_argument_sequence(path_command::LINETO_V, c == 'V' ? true : false);
+					match_single_coordinate_argument_sequence(PathInstruction::LINETO_V, c == 'V' ? true : false);
 					break;
 				case 'C': case 'c': case 'S': case 's':
 					match_wsp_star();
@@ -493,14 +557,20 @@ namespace svg
 			}			
 			return true;
 		}
-		bool match_single_coordinate_argument_sequence(path_command::PathInstruction ins, bool absolute)
+		bool match_single_coordinate_argument_sequence(PathInstruction ins, bool absolute)
 		{
 			double v;
 			if(!match_coordinate(v)) {
 				return false;
 			}
 			// emit
-			cmds_.emplace_back(new path_command(ins, absolute, v));
+			if(ins == PathInstruction::LINETO_H) {
+				cmds_.emplace_back(new LineToHCommand(absolute, v));
+			} else if(ins == PathInstruction::LINETO_V) {
+				cmds_.emplace_back(new LineToVCommand(absolute, v));
+			} else {
+				ASSERT_LOG(false, "Unexpected command given.");
+			}
 			match_wsp_star();
 			return match_single_coordinate_argument_sequence(ins, absolute);
 		}
@@ -513,7 +583,7 @@ namespace svg
 				return false;
 			}
 			// emit
-			cmds_.emplace_back(new path_command(absolute, smooth, x, y, cp1x, cp1y, cp2x, cp2y));
+			cmds_.emplace_back(new CubicBezierCommand(absolute, smooth, x, y, cp1x, cp1y, cp2x, cp2y));
 			match_wsp_star();
 			return match_curveto_argument_sequence(absolute, smooth);
 		}
@@ -552,7 +622,7 @@ namespace svg
 				return false;
 			}
 			// emit
-			cmds_.emplace_back(new path_command(absolute, smooth, x, y, cp1x, cp1y));
+			cmds_.emplace_back(new QuadraticBezierCommand(absolute, smooth, x, y, cp1x, cp1y));
 			match_wsp_star();
 			return match_bezierto_argument_sequence(absolute, smooth);
 		}
@@ -588,7 +658,7 @@ namespace svg
 				return false;
 			}
 			// emit
-			cmds_.emplace_back(new path_command(absolute, x, y, rx, ry, x_axis_rot, large_arc, sweep));
+			cmds_.emplace_back(new EllipticalArcCommand(absolute, x, y, rx, ry, x_axis_rot, large_arc, sweep));
 			match_wsp_star();
 			return match_arcto_argument_sequence(absolute);
 		}
@@ -629,13 +699,13 @@ namespace svg
 			}
 			return true;
 		}
-		const std::vector<path_command_ptr>& get_command_list() const { return cmds_; }
+		const std::vector<PathCommandPtr>& get_command_list() const { return cmds_; }
 	private:
 		std::list<char> path_;
-		std::vector<path_command_ptr> cmds_;
+		std::vector<PathCommandPtr> cmds_;
 	};
 
-	std::vector<path_command_ptr> parse_path(const std::string& s)
+	std::vector<PathCommandPtr> parse_path(const std::string& s)
 	{
 		path_parser pp(s);
 		return pp.get_command_list();

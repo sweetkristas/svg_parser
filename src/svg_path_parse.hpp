@@ -34,56 +34,34 @@
 
 namespace svg
 {
-	class path_command
+	enum class PathInstruction {
+		MOVETO,
+		LINETO,
+		LINETO_H,
+		LINETO_V,
+		CLOSEPATH,
+		CUBIC_BEZIER,
+		QUADRATIC_BEZIER,
+		ARC,
+	};
+
+	class PathCommand
 	{
 	public:
-		enum PathInstruction {
-			MOVETO,
-			LINETO,
-			LINETO_H,
-			LINETO_V,
-			CLOSEPATH,
-			CUBIC_BEZIER,
-			QUADRATIC_BEZIER,
-			ARC,
-		};
-		path_command();
-		// move to/line to constructor
-		path_command(PathInstruction ins, bool absolute, double x, double y);
-		// horiz/vert lines constructor
-		path_command(PathInstruction ins, bool absolute, double v);
-		// cubic bezier constructor
-		path_command(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y, double cp2x, double cp2y);
-		// quadratic bezier constructor
-		path_command(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y);
-		// elliptical arc constructor
-		path_command(bool absolute, double x, double y, double rx, double ry, double x_axis_rot, bool large_arc, bool sweep);
-		// Render to whatever back-end we have at the moment, on entry x&y are the current position.
-		// XXX replace x/y with a context
-		void render(float* x, float* y);
-		void cairo_render(cairo_t* t);
+		virtual ~PathCommand();
+
+		void CairoRender(cairo_t* cairo);
+
+		bool IsAbsolute() const { return absolute_; }
+		bool IsRelative() const { return !absolute_; }
+	protected:
+		PathCommand(PathInstruction ins, bool absolute);
 	private:
+		virtual void HandleCairoRender(cairo_t* cairo) = 0;
 		PathInstruction ins_;
 		bool absolute_;
-		bool smooth_;
-		double x_;
-		double y_;
-		double v_;
-		// control point for cubic/quadratic bezier
-		double cp1x_;
-		double cp1y_;
-		// control point for cubic bezier
-		double cp2x_;
-		double cp2y_;
-		// arc ellipse radii
-		double rx_;
-		double ry_;
-		// arc x axis rotation
-		double x_axis_rotation_;
-		bool large_arc_flag_;
-		bool sweep_flag_;
 	};
-	typedef std::shared_ptr<path_command> path_command_ptr;
+	typedef std::shared_ptr<PathCommand> PathCommandPtr;
 
 	class parsing_exception : public std::exception
 	{
@@ -97,5 +75,5 @@ namespace svg
 		std::string s_;
 	};
 
-	std::vector<path_command_ptr> parse_path(const std::string& s);
+	std::vector<PathCommandPtr> parse_path(const std::string& s);
 }

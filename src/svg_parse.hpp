@@ -34,11 +34,11 @@ namespace svg
 	class svg;
 	typedef std::shared_ptr<svg> svg_ptr;
 
-	class parse
+	class Parse
 	{
 	public:
-		parse(const std::string& filename);
-		~parse();
+		Parse(const std::string& filename);
+		~Parse();
 
 		void CairoRender(cairo_t* cairo) const;
 	private:

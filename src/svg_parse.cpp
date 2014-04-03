@@ -256,7 +256,7 @@ namespace svg
 		void apply_fill_color() const {
 			if(fill_color_) {
 				if(fill_color_->has_color()) {
-					get_fill_color_stack().emplace(fill_color_->r(), fill_color_->g(), fill_color_->b(), alpha_);
+					get_fill_color_stack().emplace(fill_color_->r(), fill_color_->g(), fill_color_->b(), alpha_*255);
 					//cairo_set_source_rgba(cairo, fill_color_->r()/255.0, fill_color_->g()/255.0, fill_color_->b()/255.0, alpha_);
 
 				/*auto pattern = cairo_get_source(cairo);
@@ -299,7 +299,7 @@ namespace svg
 		void apply_stroke_color() const {
 			if(stroke_color_) {
 				if(stroke_color_->has_color()) {
-					get_stroke_color_stack().emplace(stroke_color_->r(), stroke_color_->g(), stroke_color_->b(), alpha_);
+					get_stroke_color_stack().emplace(stroke_color_->r(), stroke_color_->g(), stroke_color_->b(), alpha_*255);
 					//cairo_set_source_rgba(cairo, stroke_color_->r()/255.0, stroke_color_->g()/255.0, stroke_color_->b()/255.0, alpha_);
 				} else {
 					get_stroke_color_stack().emplace(0,0,0,0);
@@ -536,6 +536,21 @@ namespace svg
 			} 
 			return letter_spacing_value_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 		}
+		void Apply(cairo_t* cairo) const {
+			// XXX this is broken -- fix at a later date.
+			cairo_font_slant_t slant = CAIRO_FONT_SLANT_NORMAL;
+			switch(font_style_) {
+			case font_properties::FontStyle::INHERIT: break;
+			case font_properties::FontStyle::NORMAL: slant = CAIRO_FONT_SLANT_NORMAL; break;
+			case font_properties::FontStyle::ITALIC: slant = CAIRO_FONT_SLANT_ITALIC; break;
+			case font_properties::FontStyle::OBLIQUE: slant = CAIRO_FONT_SLANT_OBLIQUE; break;
+			default: ASSERT_LOG(false, "Unknown font style");
+			}
+			cairo_select_font_face(cairo, get_font_family().c_str(), slant, CAIRO_FONT_WEIGHT_NORMAL);
+			/// XXX this is wrong because we need to inherit the parent values.
+			// This applies to most stuff.
+			cairo_set_font_size(cairo, get_font_size(12));
+		}
 	private:
 		std::string font_family_;
 		FontStyle font_style_;
@@ -637,20 +652,7 @@ namespace svg
 			cairo_set_source_rgba(cairo, sc.r()/255.0, sc.g()/255.0, sc.b()/255.0, sc.a()/255.0);
 		}
 		void ApplyFontProperties(cairo_t* cairo) const {
-			// font_.apply_font(cairo);
-			auto style = font_.get_font_style();
-			cairo_font_slant_t slant;
-			switch(style) {
-			case font_properties::FontStyle::NORMAL: slant = CAIRO_FONT_SLANT_NORMAL; break;
-			case font_properties::FontStyle::ITALIC: slant = CAIRO_FONT_SLANT_ITALIC; break;
-			case font_properties::FontStyle::OBLIQUE: slant = CAIRO_FONT_SLANT_OBLIQUE; break;
-			default:
-				ASSERT_LOG(false, "Bad font style given.");
-			}
-			cairo_select_font_face(cairo, font_.get_font_family().c_str(), slant, CAIRO_FONT_WEIGHT_NORMAL);
-			/// XXX this is wrong because we need to inherit the parent values.
-			// This applies to most stuff.
-			cairo_set_font_size(cairo, font_.get_font_size(12));
+			font_.Apply(cairo);
 		}
 	protected:
 		const font_properties& GetFontProperties() const { return font_; }
@@ -664,7 +666,7 @@ namespace svg
 			
 			if(!path_.empty()) {
 				for(auto p : path_) {
-					p->cairo_render(cairo);
+					p->CairoRender(cairo);
 				}
 
 				ApplyFillColor(cairo);
@@ -677,7 +679,7 @@ namespace svg
 		fill fill_;
 		font_properties font_;
 		std::vector<TransformPtr> transform_list_;
-		std::vector<path_command_ptr> path_;
+		std::vector<PathCommandPtr> path_;
 	};
 	typedef std::shared_ptr<shapes> shapes_ptr;
 
@@ -729,6 +731,7 @@ namespace svg
 			cairo_arc(cairo, cx, cy, r, 0.0, 2 * M_PI);
 
 			ApplyFillColor(cairo);
+			cairo_fill(cairo);
 			cairo_fill_preserve(cairo);
 			ApplyStrokeColor(cairo);
 			cairo_stroke(cairo);
@@ -800,8 +803,6 @@ namespace svg
 		svg_length width_;
 		svg_length height_;
 		bool is_rounded_;
-		std::vector<TransformPtr> transform_list_;
-		std::vector<path_command_ptr> path_;
 	};
 
 	class text : public shapes
@@ -977,38 +978,23 @@ namespace svg
 	};
 
 
-	parse::parse(const std::string& filename)
+	Parse::Parse(const std::string& filename)
 	{
 		ptree pt;
 		read_xml(filename, pt);
-		//display_ptree(pt);
 
 		for(auto& node : pt) {
 			if(node.first == "svg") {
 				svg_data_.emplace_back(new svg(node.second));
 			}
 		}
-
-		/*for(auto& node : pt.get_child("svg")) {
-			if(node.first == "g") {
-				const auto& g = node.second;
-				if(g.count("path") != 0) {
-					auto bounds = g.equal_range("path");
-					for(auto it = bounds.first; it != bounds.second; ++it) {
-						std::cerr  << it->first << " : ";
-						const ptree& d = it->second.get_child("<xmlattr>.d");
-						std::cerr << d.get_value<std::string>() << std::endl;
-					}
-				}
-			}
-		}*/
 	}
 
-	parse::~parse()
+	Parse::~Parse()
 	{
 	}
 
-	void parse::CairoRender(cairo_t* cairo) const
+	void Parse::CairoRender(cairo_t* cairo) const
 	{
 		cairo_set_source_rgb(cairo, 0.0, 0.0, 0.0);
 		cairo_set_line_cap(cairo, CAIRO_LINE_CAP_BUTT);
@@ -1016,7 +1002,7 @@ namespace svg
 		cairo_set_miter_limit(cairo, 4.0);
 		cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_EVEN_ODD);
 		cairo_set_line_width(cairo, 1.0);
-		get_fill_color_stack().emplace(0,0,0,1);
+		get_fill_color_stack().emplace(0,0,0,255);
 		get_stroke_color_stack().emplace(0,0,0,0);
 
 		for(auto p : svg_data_) {
