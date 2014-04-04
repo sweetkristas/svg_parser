@@ -27,7 +27,7 @@
 #include "asserts.hpp"
 #include "svg_paint.hpp"
 
-namespace svg
+namespace KRE
 {
 	namespace 
 	{

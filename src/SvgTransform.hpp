@@ -28,7 +28,7 @@
 #include <vector>
 #include <cairo/cairo.h>
 
-namespace svg
+namespace KRE
 {
 	class Transform;
 	typedef std::shared_ptr<Transform> TransformPtr;

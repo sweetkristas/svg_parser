@@ -27,7 +27,7 @@
 #include <memory>
 #include <string>
 
-namespace svg
+namespace KRE
 {
 	class paint
 	{

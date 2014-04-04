@@ -15,9 +15,9 @@
     <ClCompile Include="..\..\src\geometry.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\svg_paint.cpp" />
-    <ClCompile Include="..\..\src\svg_parse.cpp" />
-    <ClCompile Include="..\..\src\svg_path_parse.cpp" />
-    <ClCompile Include="..\..\src\SvgTransform.cpp" />
+    <ClCompile Include="..\..\src\SVGParse.cpp" />
+    <ClCompile Include="..\..\src\SVGPathParse.cpp" />
+    <ClCompile Include="..\..\src\SVGTransform.cpp" />
     <ClCompile Include="..\..\src\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -28,9 +28,9 @@
     <ClInclude Include="..\..\src\profile_timer.hpp" />
     <ClInclude Include="..\..\src\SDLWrapper.hpp" />
     <ClInclude Include="..\..\src\svg_paint.hpp" />
-    <ClInclude Include="..\..\src\svg_parse.hpp" />
-    <ClInclude Include="..\..\src\svg_path_parse.hpp" />
-    <ClInclude Include="..\..\src\SvgTransform.hpp" />
+    <ClInclude Include="..\..\src\SVGParse.hpp" />
+    <ClInclude Include="..\..\src\SVGPathParse.hpp" />
+    <ClInclude Include="..\..\src\SVGTransform.hpp" />
     <ClInclude Include="..\..\src\utils.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -27,7 +27,7 @@
 #include "asserts.hpp"
 #include "SvgTransform.hpp"
 
-namespace svg
+namespace KRE
 {
 	class MatrixTransform : public Transform
 	{

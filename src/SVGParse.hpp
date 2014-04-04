@@ -23,57 +23,28 @@
 
 #pragma once
 
-#include <cairo/cairo.h>
-#include <exception>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
-#include "formatter.hpp"
+#include <cairo/cairo.h>
 
-namespace svg
+namespace KRE
 {
-	enum class PathInstruction {
-		MOVETO,
-		LINETO,
-		LINETO_H,
-		LINETO_V,
-		CLOSEPATH,
-		CUBIC_BEZIER,
-		QUADRATIC_BEZIER,
-		ARC,
-	};
-
-	class PathCommand
+	namespace SVG
 	{
-	public:
-		virtual ~PathCommand();
+		class SVGElement;
+		typedef std::shared_ptr<SVGElement> SVGElementPtr;
 
-		void CairoRender(cairo_t* cairo);
+		class Parse
+		{
+		public:
+			Parse(const std::string& filename);
+			~Parse();
 
-		bool IsAbsolute() const { return absolute_; }
-		bool IsRelative() const { return !absolute_; }
-	protected:
-		PathCommand(PathInstruction ins, bool absolute);
-	private:
-		virtual void HandleCairoRender(cairo_t* cairo) = 0;
-		PathInstruction ins_;
-		bool absolute_;
-	};
-	typedef std::shared_ptr<PathCommand> PathCommandPtr;
-
-	class parsing_exception : public std::exception
-	{
-	public:
-		parsing_exception(const std::string& ss) : s_(ss) {}
-		virtual ~parsing_exception() override {}
-		virtual const char* what() const override {
-			return s_.c_str();
-		}
-	private:
-		std::string s_;
-	};
-
-	std::vector<PathCommandPtr> parse_path(const std::string& s);
+			void CairoRender(cairo_t* cairo) const;
+		private:
+			std::vector<SVGElementPtr> svg_data_;
+		};
+	}
 }

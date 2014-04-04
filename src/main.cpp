@@ -3,7 +3,7 @@
 #include "asserts.hpp"
 #include "filesystem.hpp"
 #include "profile_timer.hpp"
-#include "svg_parse.hpp"
+#include "SVGParse.hpp"
 #include "SDLWrapper.hpp"
 
 namespace 
@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 		std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
 		return 1;
 	}
-	svg::Parse p(argv[1]);
+	KRE::SVG::Parse p(argv[1]);
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\spider-face.svg");
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\logo-faith.svg");
 	//svg::parse p("c:\\projects\\svg_parser\\icons\\zigzag-tune.svg");
