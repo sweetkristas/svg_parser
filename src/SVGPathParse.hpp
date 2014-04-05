@@ -61,10 +61,10 @@ namespace KRE
 			void SetControlPoints(double x, double y) {
 				cp1x_ = x;
 				cp1y_ = y;
-				control_point_set_ = false;
+				control_point_set_ = true;
 			}
 			void ClearControlPoints() {
-				control_point_set_ = 0;
+				control_point_set_ = false;
 			}
 			void GetControlPoints(double* x, double* y) {
 				ASSERT_LOG(x != NULL, "x is null. no place for result");
@@ -72,8 +72,9 @@ namespace KRE
 				if(control_point_set_) {
 					*x = cp1x_;
 					*y = cp1y_;
+				} else {
+					cairo_get_current_point(cairo_, x, y);
 				}
-				cairo_get_current_point(cairo_, x, y);
 			}
 		private:
 			cairo_t* cairo_;

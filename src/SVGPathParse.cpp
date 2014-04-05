@@ -186,17 +186,15 @@ namespace KRE
 			virtual ~CubicBezierCommand() {}
 		private:
 			void HandleCairoRender(CommandContext& ctx) override {
+				double c0x, c0y;
+				cairo_get_current_point(ctx.Cairo(), &c0x, &c0y);
 				if(smooth_) {
-					double c0x, c0y;
-					cairo_get_current_point(ctx.Cairo(), &c0x, &c0y);
-					double cp1x, cp1y;
-					ctx.GetControlPoints(&cp1x, &cp1y);
+					ctx.GetControlPoints(&cp1x_, &cp1y_);
+					cp1x_ = 2.0*c0x - cp1x_;
+					cp1y_ = 2.0*c0y - cp1y_;
 					if(!IsAbsolute()) {
-						cp1x_ = -cp1x;
-						cp1y_ = -cp1y;
-					} else {
-						cp1x_ = 2.0*c0x - cp1x;
-						cp1y_ = 2.0*c0y - cp1y;
+						cp1x_ -= c0x;
+						cp1y_ -= c0y;
 					}
 				}
 				if(IsAbsolute()) {
@@ -204,7 +202,8 @@ namespace KRE
 				} else {
 					cairo_rel_curve_to(ctx.Cairo(), cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
 				}
-				ctx.SetControlPoints(cp2x_, cp2y_);
+				// we always write control points in absolute co-ords
+				ctx.SetControlPoints(IsAbsolute() ? cp2x_ : cp2x_ + c0x, IsAbsolute() ? cp2y_ : cp2y_ + c0y);
 			}
 			bool smooth_;
 			double x_;
@@ -235,12 +234,11 @@ namespace KRE
 				if(smooth_) {
 					double cp1x, cp1y;
 					ctx.GetControlPoints(&cp1x, &cp1y);
+					cp1x_ = 2.0*c0x - cp1x;
+					cp1y_ = 2.0*c0y - cp1y;
 					if(!IsAbsolute()) {
-						cp1x_ = -cp1x;
-						cp1y_ = -cp1y;
-					} else {
-						cp1x_ = 2.0*c0x - cp1x;
-						cp1y_ = 2.0*c0y - cp1y;
+						cp1x_ -= c0x;
+						cp1y_ -= c0y;
 					}
 				}
 				double dx, dy;
@@ -263,7 +261,8 @@ namespace KRE
 
 				cairo_curve_to(ctx.Cairo(), cpx1, cpy1, cpx2, cpy2, x_, y_);
 
-				ctx.SetControlPoints(cp1x_, cp1y_);
+				// we always write control points in absolute co-ords
+				ctx.SetControlPoints(IsAbsolute() ? cp1x_ : cp1x_ + c0x, IsAbsolute() ? cp1y_ : cp1y_ + c0y);
 			}
 			bool smooth_;
 			double x_;
