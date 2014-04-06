@@ -35,10 +35,6 @@ reflected point (i.e., (newx1, newy1), the first control point of the current pa
 
 */
 
-#ifndef _USE_MATH_DEFINES
-#	define _USE_MATH_DEFINES	1
-#endif
-
 #include <cmath>
 #include <iostream>
 #include <list>
@@ -50,6 +46,26 @@ namespace KRE
 {
 	namespace SVG
 	{
+		namespace
+		{
+
+			// Compute the angle between two vectors
+			double compute_angle(double ux, double uy, double vx, double vy)
+			{
+				const double sign = ux*vy - uy*vx < 0 ? -1 : 1;
+				const double length_u = std::sqrt(ux*ux+uy*uy);
+				const double length_v = std::sqrt(vx*vx+vy*vy);
+				const double dot_uv = ux*vx + uy*vy;
+				return sign * std::acos(dot_uv/(length_u*length_v));
+			}
+
+			template<typename T>
+			T clamp(T value, T min_val, T max_val) 
+			{
+				return std::max(std::min(max_val, value), min_val);
+			}
+		}
+
 		PathCommand::PathCommand(PathInstruction ins, bool absolute)
 			: ins_(ins), absolute_(absolute)
 		{
@@ -279,10 +295,11 @@ namespace KRE
 				: PathCommand(PathInstruction::CUBIC_BEZIER, absolute),
 				x_(x), y_(y), 
 				rx_(rx), ry_(ry), 
-				x_axis_rotation_(x_axis_rot), 
 				large_arc_flag_(large_arc), 
 				sweep_flag_(sweep) 
 			{
+				x_axis_rotation_ = x_axis_rot / 180.0 * M_PI;
+				std::cerr << "Elliptical arc: end(" << x << "," << y << "), axis(" << rx << "," << ry << "), x_axis_rot(" << x_axis_rot << "), large_arc(" << large_arc << "), sweep(" << sweep << ")" << std::endl;
 			}
 			virtual ~EllipticalArcCommand() {}
 		private:
@@ -292,58 +309,125 @@ namespace KRE
 				cairo_get_current_point(ctx.Cairo(), &x1, &y1);
 
 				//ASSERT_LOG(rx_ > ry_, "Length of major axis is smaller than minor axis");
-				if(rx_ < ry_) {
-					std::swap(rx_, ry_);
-				}
+				//if(rx_ < ry_) {
+				//	std::swap(rx_, ry_);
+				//}
 
 				// calculate some ellipse stuff
 				// a is the length of the major axis
 				// b is the length of the minor axis
-				const double a = rx_;
-				const double b = ry_;
+				double a = rx_;
+				double b = ry_;
 				const double x2 = IsAbsolute() ? x_ : x_ + x1;
 				const double y2 = IsAbsolute() ? y_ : y_ + y1;
-				
-				// http://stackoverflow.com/questions/197649/how-to-calculate-center-of-an-ellipse-by-two-points-and-radius-sizes
-				const double r1 = (x1 - x2) / (2 * a);
-				const double r2 = (y2 - y1) / (2 * b);
-				const double a1 = std::atan2(r1, r2);
-				const double a2 = std::asin(std::sqrt(r1*r1+r2*r2));
-				// t1 is the angle to the first point
-				double t1 = a1+a2;
-				// t2 is the angle to the second point.
-				double t2 = a1-a2;
-				// (xc,yc) is the centre of the ellipse 
-				const double xc = x1 + a*cos(t1);
-				const double yc = y1 + b*sin(t1);
+
+				// start and end points in the same location is equivalent to not drawing the arc.
+				if(std::abs(x1-x2) < DBL_EPSILON && std::abs(y1-y2) < DBL_EPSILON) {
+					return;
+				}
+			
+				const double r1 = (x1-x2)/2.0;
+				const double r2 = (y1-y2)/2.0;
+
+				const double cosp = cos(x_axis_rotation_);
+				const double sinp = sin(x_axis_rotation_);
+
+				const double x1_prime = cosp*r1 + sinp*r2;
+				const double y1_prime = -sinp * r1 + cosp*r2;
+
+				double gamma = (x1_prime*x1_prime)/(a*a) + (y1_prime*y1_prime)/(b*b);
+				if (gamma > 1) {
+					a *= sqrt(gamma);
+					b *= sqrt(gamma);
+				}
+
+				const double denom1 = a*a*y1_prime*y1_prime+b*b*x1_prime*x1_prime;
+				if(std::abs(denom1) < DBL_EPSILON) {
+					return;
+				}
+				//const double root = std::sqrt((a*a*b*b - a*a*y1_prime*y1_prime - b*b*x1_prime*x1_prime)/(a*a*y1_prime*y1_prime + b*b*x1_prime*x1_prime));
+				const double root = std::sqrt(std::abs(a*a*b*b/denom1-1));
+				double xc_prime = root * a * y1_prime / b;
+				double yc_prime = -root * b * x1_prime / a;
+
+				if((large_arc_flag_ && sweep_flag_ ) || (!large_arc_flag_ && !sweep_flag_ )) {
+					xc_prime = -1 * xc_prime;
+					yc_prime = -1 * yc_prime;
+				}
+
+				const double xc = cosp * xc_prime - sinp * yc_prime + (x1+x2)/2.0;
+				const double yc = sinp * xc_prime + cosp * yc_prime + (y1+y2)/2.0;
+
+				/*double theta_1     = compute_angle(1, 0, (x1_prime-xc_prime)/a, (y1_prime-yc_prime)/b);
+				double theta_delta = std::fmod(compute_angle(
+						(x1_prime-xc_prime)/a, (-x1_prime-xc_prime)/a,
+						(y1_prime-yc_prime)/b, (-y1_prime-yc_prime)/b), 2.0*M_PI);
+
+				const double t1 = theta_1;
+				const double t2 = theta_delta > 0 && !sweep_flag_ ? theta_delta-2.0*M_PI : theta_delta < 0 && sweep_flag_ ? theta_delta+2.0*M_PI : theta_delta;*/
+				const double k1 = (x1_prime - xc_prime)/a;
+				const double k2 = (y1_prime - yc_prime)/b;
+				const double k3 = (-x1_prime - xc_prime)/a;
+				const double k4 = (-y1_prime - yc_prime)/b;
+
+				const double k5 = sqrt(fabs(k1*k1 + k2*k2));
+				if(std::abs(k5) < DBL_EPSILON) { 
+					return;
+				}
+
+				const double t1 = (k2 < 0 ? -1 : 1) * std::acos(clamp(k1/k5, -1.0, 1.0));	// theta_1
+
+				const double k7 = std::sqrt(fabs((k1*k1 + k2*k2)*(k3*k3 + k4*k4)));
+				if(std::abs(k7) < DBL_EPSILON) {
+					return;
+				}
+
+				const double theta_delta = (k1*k4 - k3*k2 < 0 ? -1 : 1) * acos(clamp((k1*k3 + k2*k4)/k7, -1.0, 1.0));
+				const double t2 = theta_delta > 0 && !sweep_flag_ ? theta_delta-2.0*M_PI : theta_delta < 0 && sweep_flag_ ? theta_delta+2.0*M_PI : theta_delta;
 
 				// prevent drawing a line from current position to start of arc.
 				cairo_new_sub_path(ctx.Cairo());
 
-				cairo_matrix_t mxy;
-				cairo_matrix_init_identity(&mxy);
-				if((large_arc_flag_ && sweep_flag_ ) || (!large_arc_flag_ && !sweep_flag_ )) {
-					cairo_matrix_translate(&mxy, xc, yc);
-				} else {
-					cairo_matrix_translate(&mxy, xc-a, yc+b);
+				const int n_segs = int(std::ceil(std::abs(t2/(M_PI*0.5+0.001))));
+				for(int i = 0; i < n_segs; i++) {
+					const double th0 = t1 + i * t2 / n_segs;
+					const double th1 = t1 + (i + 1) * t2 / n_segs;
+					const double th_half = 0.5 * (th1 - th0);
+					const double t = (8.0 / 3.0) * std::sin(th_half * 0.5) * std::sin(th_half * 0.5) / std::sin(th_half);
+					const double x1 = a*(std::cos(th0) - t * std::sin(th0));
+					const double y1 = b*(std::sin(th0) + t * std::cos(th0));
+					const double x3 = a*cos (th1);
+					const double y3 = b*sin (th1);
+					const double x2 = x3 + a*(t * std::sin(th1));
+					const double y2 = y3 + b*(-t * std::cos(th1));
+					cairo_curve_to(ctx.Cairo(), 
+						xc + cosp*x1 - sinp*y1, 
+						yc + sinp*x1 + cosp*y1, 
+						xc + cosp*x2 - sinp*y2, 
+						yc + sinp*x2 + cosp*y2, 
+						xc + cosp*x3 - sinp*y3, 
+						yc + sinp*x3 + cosp*y3);
 				}
-				cairo_matrix_rotate(&mxy, x_axis_rotation_);
-				cairo_matrix_scale(&mxy, a, b);
-				cairo_transform(ctx.Cairo(), &mxy);
+
+				//cairo_matrix_t mxy;
+				//cairo_matrix_init_identity(&mxy);
+				//cairo_matrix_translate(&mxy, xc, yc);
+				//cairo_matrix_scale(&mxy, a, b);
+				//cairo_transform(ctx.Cairo(), &mxy);
 				// since we're going to scale/translate the cairo arc, we make it based on a unit circle.
-				if(large_arc_flag_) {
-					if(sweep_flag_) {
-						cairo_arc_negative(ctx.Cairo(), 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
-					} else {
-						cairo_arc(ctx.Cairo(), 0.0, 0.0, 1.0, t1, t2);
-					}
-				} else {
-					if(sweep_flag_) {
-						cairo_arc_negative(ctx.Cairo(), 0.0, 0.0, 1.0, t1, t2);
-					} else {
-						cairo_arc(ctx.Cairo(), 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
-					}
-				}
+				//if(large_arc_flag_) {
+					//if(sweep_flag_) {
+					//	cairo_arc_negative(ctx.Cairo(), 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
+					//} else {
+				//		cairo_arc_negative(ctx.Cairo(), 0.0, 0.0, 1.0, t1, t2);
+					//}
+				//} else {
+					//if(sweep_flag_) {
+				//		cairo_arc(ctx.Cairo(), 0.0, 0.0, 1.0, t1, t2);
+					//} else {
+					//	cairo_arc(ctx.Cairo(), 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
+					//}
+				//}
 
 				cairo_restore(ctx.Cairo());
 				cairo_move_to(ctx.Cairo(), x2, y2);
@@ -679,7 +763,15 @@ namespace KRE
 					return false;
 				}
 				// emit
-				cmds_.emplace_back(new EllipticalArcCommand(absolute, x, y, rx, ry, x_axis_rot, large_arc, sweep));
+				rx = std::abs(rx);
+				ry = std::abs(ry);
+				if(rx < DBL_EPSILON) {
+					cmds_.emplace_back(new LineToVCommand(absolute, ry));
+				} else if(ry < DBL_EPSILON) {
+					cmds_.emplace_back(new LineToHCommand(absolute, rx));
+				} else {
+					cmds_.emplace_back(new EllipticalArcCommand(absolute, x, y, rx, ry, x_axis_rot, large_arc, sweep));
+				}
 				match_wsp_star();
 				return match_arcto_argument_sequence(absolute);
 			}

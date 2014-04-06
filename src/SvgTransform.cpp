@@ -24,6 +24,7 @@
 #include <boost/tokenizer.hpp>
 #include <sstream>
 
+#include <cmath>
 #include "asserts.hpp"
 #include "SvgTransform.hpp"
 
@@ -242,7 +243,7 @@ namespace KRE
 						}
 						case TransformType::ROTATE: {
 							ASSERT_LOG(parameters.size() == 1 || parameters.size() == 3, "Parsing transform:rotate found " << parameters.size() << " parameter(s), expected 1 or 3");
-							double angle = parameters[0];
+							double angle = parameters[0] / 180.0 * M_PI;
 							double cx = parameters.size() == 3 ? parameters[1] : 0;
 							double cy = parameters.size() == 3 ? parameters[2] : 0;
 							RotationTransform* rtrf = new RotationTransform(angle, cx, cy);
