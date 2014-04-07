@@ -626,6 +626,7 @@ namespace KRE
 			virtual ~shapes() {}
 			void CairoRender(cairo_t* cairo) const {
 				cairo_save(cairo);
+				cairo_new_path(cairo);
 				fill_.apply_colors();
 
 				ApplyFill(cairo);

@@ -74,7 +74,7 @@ namespace KRE
 		}
 	private:
 		void HandleApply(cairo_t* cairo) override {
-			std::cerr << "XXX: " << this->as_string() << std::endl;
+			std::cerr << "XXX: " << as_string() << std::endl;
 			cairo_translate(cairo, x_, y_);
 		}
 		double x_;
@@ -274,7 +274,7 @@ namespace KRE
 						ASSERT_LOG(false, "Invalid number value: " << *it);
 					}
 					ASSERT_LOG(errno != ERANGE, "Parsed numeric value out-of-range: " << *it);					
-					parameters.push_back(float(value));
+					parameters.push_back(value);
 				}
 			}
 		}

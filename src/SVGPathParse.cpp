@@ -308,11 +308,6 @@ namespace KRE
 				double x1, y1;
 				cairo_get_current_point(ctx.Cairo(), &x1, &y1);
 
-				//ASSERT_LOG(rx_ > ry_, "Length of major axis is smaller than minor axis");
-				//if(rx_ < ry_) {
-				//	std::swap(rx_, ry_);
-				//}
-
 				// calculate some ellipse stuff
 				// a is the length of the major axis
 				// b is the length of the minor axis
@@ -345,7 +340,6 @@ namespace KRE
 				if(std::abs(denom1) < DBL_EPSILON) {
 					return;
 				}
-				//const double root = std::sqrt((a*a*b*b - a*a*y1_prime*y1_prime - b*b*x1_prime*x1_prime)/(a*a*y1_prime*y1_prime + b*b*x1_prime*x1_prime));
 				const double root = std::sqrt(std::abs(a*a*b*b/denom1-1));
 				double xc_prime = root * a * y1_prime / b;
 				double yc_prime = -root * b * x1_prime / a;
@@ -358,13 +352,6 @@ namespace KRE
 				const double xc = cosp * xc_prime - sinp * yc_prime + (x1+x2)/2.0;
 				const double yc = sinp * xc_prime + cosp * yc_prime + (y1+y2)/2.0;
 
-				/*double theta_1     = compute_angle(1, 0, (x1_prime-xc_prime)/a, (y1_prime-yc_prime)/b);
-				double theta_delta = std::fmod(compute_angle(
-						(x1_prime-xc_prime)/a, (-x1_prime-xc_prime)/a,
-						(y1_prime-yc_prime)/b, (-y1_prime-yc_prime)/b), 2.0*M_PI);
-
-				const double t1 = theta_1;
-				const double t2 = theta_delta > 0 && !sweep_flag_ ? theta_delta-2.0*M_PI : theta_delta < 0 && sweep_flag_ ? theta_delta+2.0*M_PI : theta_delta;*/
 				const double k1 = (x1_prime - xc_prime)/a;
 				const double k2 = (y1_prime - yc_prime)/b;
 				const double k3 = (-x1_prime - xc_prime)/a;
@@ -408,26 +395,6 @@ namespace KRE
 						xc + cosp*x3 - sinp*y3, 
 						yc + sinp*x3 + cosp*y3);
 				}
-
-				//cairo_matrix_t mxy;
-				//cairo_matrix_init_identity(&mxy);
-				//cairo_matrix_translate(&mxy, xc, yc);
-				//cairo_matrix_scale(&mxy, a, b);
-				//cairo_transform(ctx.Cairo(), &mxy);
-				// since we're going to scale/translate the cairo arc, we make it based on a unit circle.
-				//if(large_arc_flag_) {
-					//if(sweep_flag_) {
-					//	cairo_arc_negative(ctx.Cairo(), 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
-					//} else {
-				//		cairo_arc_negative(ctx.Cairo(), 0.0, 0.0, 1.0, t1, t2);
-					//}
-				//} else {
-					//if(sweep_flag_) {
-				//		cairo_arc(ctx.Cairo(), 0.0, 0.0, 1.0, t1, t2);
-					//} else {
-					//	cairo_arc(ctx.Cairo(), 0.0, 0.0, 1.0, M_PI/2.0-t1, M_PI/2.0-t2);
-					//}
-				//}
 
 				cairo_restore(ctx.Cairo());
 				cairo_move_to(ctx.Cairo(), x2, y2);
