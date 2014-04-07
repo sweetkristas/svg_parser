@@ -68,6 +68,11 @@ namespace KRE
 				static std::stack<paint> res;
 				return res;
 			}
+
+			void print_matrix(const cairo_matrix_t& mat)
+			{
+				std::cerr << "MAT(" << mat.xx << " " << mat.yx << " " << mat.xy << " " << mat.yy << " " << mat.x0 << " " << mat.y0 << ")" << std::endl;
+			}
 		}
 
 		class svg_length

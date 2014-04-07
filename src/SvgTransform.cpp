@@ -74,6 +74,7 @@ namespace KRE
 		}
 	private:
 		void HandleApply(cairo_t* cairo) override {
+			std::cerr << "XXX: " << this->as_string() << std::endl;
 			cairo_translate(cairo, x_, y_);
 		}
 		double x_;

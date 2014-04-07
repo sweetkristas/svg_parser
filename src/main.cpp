@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 		SDL_RenderSetLogicalSize(renderer_, width, height);
 
 		auto tex_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-		SDL_SetRenderDrawColor(renderer_, 255, 255, 0, 128);
+		SDL_SetRenderDrawColor(renderer_, 0x2b, 0x22, 0, 255);
 		if(SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND) != 0) {
 			ASSERT_LOG(false, "Unable to set blend mode: " << SDL_GetError());
 		}
