@@ -587,6 +587,8 @@ namespace KRE
 							if(!d.empty()) {
 								path_ = parse_path(d);
 							}
+						} else if(attr.first == "id") {
+							id_ = attr.second.data();
 						} else if(attr.first == "transform") {
 							transform_list_ = Transform::Factory(attr.second.data());
 						} else if(attr.first == "fill") {
@@ -663,6 +665,7 @@ namespace KRE
 			void ApplyFontProperties(cairo_t* cairo) const {
 				font_.Apply(cairo);
 			}
+			const std::string& ID() const { return id_; }
 		protected:
 			const font_properties& GetFontProperties() const { return font_; }
 		private:
@@ -686,6 +689,7 @@ namespace KRE
 				}
 			}
 
+			std::string id_;
 			fill fill_;
 			font_properties font_;
 			std::vector<TransformPtr> transform_list_;
@@ -815,6 +819,57 @@ namespace KRE
 			bool is_rounded_;
 		};
 
+		class polygon : public shapes
+		{
+		public:
+			polygon(const ptree& pt) : shapes(pt, boost::assign::list_of("points"))
+			{
+				auto attributes = pt.get_child_optional("<xmlattr>");
+				if(attributes) {
+					for(auto& attr : *attributes) {
+						if(attr.first == "points") {
+							std::vector<svg_length> res;
+							boost::char_separator<char> seperators(" \n\t\r,");
+							boost::tokenizer<boost::char_separator<char>> tok(attr.second.data(), seperators);
+							for(auto it = tok.begin(); it != tok.end(); ++it) {
+								res.emplace_back(*it);
+							}
+							ASSERT_LOG(res.size() % 2 == 0, "'polygon' element has an odd number of points.");
+							auto it = res.begin();
+							while(it != res.end()) {
+								svg_length p1 = *it;
+								++it;
+								svg_length p2 = *it;
+								++it;
+								points_.emplace_back(p1, p2);
+							}
+						}
+					}
+				}
+			}
+			virtual ~polygon() {}
+		private:
+			virtual void HandleCairoRender(cairo_t* cairo) const override {
+				auto it = points_.begin();
+				cairo_move_to(cairo, 
+					it->first.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER), 
+					it->second.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
+				while(it != points_.end()) {
+					cairo_line_to(cairo, 
+						it->first.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER), 
+						it->second.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
+					++it;
+				}
+				cairo_close_path(cairo);
+
+				ApplyFillColor(cairo);
+				cairo_fill_preserve(cairo);
+				ApplyStrokeColor(cairo);
+				cairo_stroke(cairo);
+			}
+			std::vector<std::pair<svg_length, svg_length>> points_;
+		};
+
 		class text : public shapes
 		{
 		public:
@@ -882,6 +937,7 @@ namespace KRE
 		{
 		public:
 			group(const ptree& pt) : shapes(pt,std::set<std::string>()) {
+				display_ptree(pt);
 				for(auto& v : pt) {
 					if(v.first == "path") {
 						shapes_.emplace_back(new path(v.second));
@@ -895,10 +951,12 @@ namespace KRE
 					//	shapes_.emplace_back(new ellipse(v.second));
 					//} else if(v.first == "polyline") {
 					//	shapes_.emplace_back(new polyline(v.second));
-					//} else if(v.first == "polygon") {
-					//	shapes_.emplace_back(new polygon(v.second));
+					} else if(v.first == "polygon") {
+						shapes_.emplace_back(new polygon(v.second));
 					} else if(v.first == "g") {
 						shapes_.emplace_back(new group(v.second));
+					} else if(v.first == "defs") {
+						//defs_.emplace_back(new group(v.second.get_value<std::string>()));
 					} else if(v.first == "use") {
 						// XXX
 					} else if(v.first == "<xmlattr>") {
@@ -908,6 +966,9 @@ namespace KRE
 					} else {
 						std::cerr << "SVG: group unhandled child element: '" << v.first << "' : '" << v.second.data() << "'" << std::endl;
 					}
+				}
+				for(auto& s : defs_) {
+					std::cerr << "DEF: " << s->ID() << std::endl;
 				}
 			}
 			virtual ~group() {
@@ -919,6 +980,7 @@ namespace KRE
 			}
 		private:
 			std::vector<shapes_ptr> shapes_;
+			std::vector<shapes_ptr> defs_;
 		};
 
 		class SVGElement
