@@ -398,7 +398,8 @@ namespace KRE
 
 			void set_stroke_dasharray(const std::string& da) {
 				std::vector<svg_length> res;
-				boost::tokenizer<boost::char_separator<char>> tok(da);
+				boost::char_separator<char> seperators(" \n\t\r,");
+				boost::tokenizer<boost::char_separator<char>> tok(da, seperators);
 				for(auto it = tok.begin(); it != tok.end(); ++it) {
 					res.emplace_back(*it);
 				}
@@ -416,7 +417,7 @@ namespace KRE
 				}
 				return stroke_dasharray_;
 			}
-			void apply_stroke_dasharray(cairo_t* cairo) {
+			void apply_stroke_dasharray(cairo_t* cairo) const {
 				if(!stroke_dasharray_.empty()) {
 					std::vector<double> dashes;
 					for(auto& l : stroke_dasharray_) {
@@ -440,7 +441,8 @@ namespace KRE
 				apply_stroke_width(cairo);
 				apply_stroke_linejoin(cairo);
 				apply_stroke_linecap(cairo);
-				apply_stroke_miterlimit(cairo);		
+				apply_stroke_miterlimit(cairo);
+				apply_stroke_dasharray(cairo);
 			}
 		private:
 			paint_ptr fill_color_;
@@ -1008,7 +1010,7 @@ namespace KRE
 			cairo_set_line_cap(cairo, CAIRO_LINE_CAP_BUTT);
 			cairo_set_line_join(cairo, CAIRO_LINE_JOIN_MITER);
 			cairo_set_miter_limit(cairo, 4.0);
-			cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_EVEN_ODD);
+			cairo_set_fill_rule(cairo, CAIRO_FILL_RULE_WINDING);
 			cairo_set_line_width(cairo, 1.0);
 			get_fill_color_stack().emplace(0,0,0,255);
 			get_stroke_color_stack().emplace(0,0,0,0);

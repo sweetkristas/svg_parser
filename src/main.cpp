@@ -1,3 +1,7 @@
+#include <sstream>
+#include <string>
+#include <vector>
+#include <boost/filesystem.hpp>
 #include <cairo/cairo.h>
 
 #include "asserts.hpp"
@@ -14,37 +18,56 @@ namespace
 
 int main(int argc, char* argv[])
 {
-	if(argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
+	std::vector<std::string> args;
+	std::vector<std::string> opts;
+	for(int n = 1; n != argc; ++n) {
+		std::string argument(argv[n]);
+		if(argument[0] == '-') {
+			opts.push_back(argument);
+		} else {
+			args.push_back(argument);
+		}
+	}
+	if(args.size() < 1) {
+		std::cerr << "Usage: " << argv[0] << " [--no-display] <filename> [<filename2> ...]" << std::endl;
 		return 1;
 	}
-	KRE::SVG::Parse p(argv[1]);
-	//svg::parse p("c:\\projects\\svg_parser\\icons\\spider-face.svg");
-	//svg::parse p("c:\\projects\\svg_parser\\icons\\logo-faith.svg");
-	//svg::parse p("c:\\projects\\svg_parser\\icons\\zigzag-tune.svg");
-	//svg::parse p("c:\\projects\\svg_parser\\icons\\test-arc.svg");
-	//svg::parse p("c:\\projects\\svg_parser\\icons\\soccer-ball.svg");
-	/*const std::string root_path("c:\\projects\\svg_parser\\icons\\");
-	std::vector<std::string> files;
-	sys::get_files_in_dir(root_path, &files);
-	for(auto& f : files) {
-		std::string filename = root_path + f;
-		//std::cerr << "Parsing: " << filename << std::endl;
-		svg::parse p(filename);
-	}*/
 
-	SDL::SDLPtr manager(new SDL::SDL());
-	
-	cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-	cairo_t* cairo = cairo_create(surface);
-	{
-		profile::manager pman("cairo_render");
-		p.CairoRender(cairo);
+	bool display_image = true;
+	for(auto& arg : opts) {
+		if(arg == "--no-display") {
+			display_image = false;
+		}
 	}
 
-	cairo_surface_write_to_png(surface, "c:\\projects\\svg_parser\\test.png");
+	cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+	cairo_t* cairo = cairo_create(surface);
+
+	for(auto& filename : args) {
+		KRE::SVG::Parse p(filename);
+
+		{
+			profile::manager pman("cairo_render");
+			p.CairoRender(cairo);
+		}
+
+		using namespace boost::filesystem;
+		path npath(filename);
+		npath.replace_extension("png");
+		cairo_surface_write_to_png(surface, npath.generic_string().c_str());
+		auto status = cairo_status(cairo);
+		ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status));
+	}
+
+	// Early return if writing image to file only.
+	if(display_image == false) {
+		return 0;
+	}
 
 	typedef std::shared_ptr<SDL_Window> SDL_WindowPtr;
+
+	SDL::SDLPtr manager(new SDL::SDL());
+
 	SDL_WindowPtr window_;
 	SDL_GLContext context_ = NULL;
 	SDL_Renderer* renderer_ = NULL;

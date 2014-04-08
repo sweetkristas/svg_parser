@@ -299,12 +299,11 @@ namespace KRE
 				sweep_flag_(sweep) 
 			{
 				x_axis_rotation_ = x_axis_rot / 180.0 * M_PI;
-				std::cerr << "Elliptical arc: end(" << x << "," << y << "), axis(" << rx << "," << ry << "), x_axis_rot(" << x_axis_rot << "), large_arc(" << large_arc << "), sweep(" << sweep << ")" << std::endl;
+				//std::cerr << "Elliptical arc: end(" << x << "," << y << "), axis(" << rx << "," << ry << "), x_axis_rot(" << x_axis_rot << "), large_arc(" << large_arc << "), sweep(" << sweep << ")" << std::endl;
 			}
 			virtual ~EllipticalArcCommand() {}
 		private:
 			void HandleCairoRender(CommandContext& ctx) override {
-				cairo_save(ctx.Cairo());
 				double x1, y1;
 				cairo_get_current_point(ctx.Cairo(), &x1, &y1);
 
@@ -372,10 +371,8 @@ namespace KRE
 				const double theta_delta = (k1*k4 - k3*k2 < 0 ? -1 : 1) * acos(clamp((k1*k3 + k2*k4)/k7, -1.0, 1.0));
 				const double t2 = theta_delta > 0 && !sweep_flag_ ? theta_delta-2.0*M_PI : theta_delta < 0 && sweep_flag_ ? theta_delta+2.0*M_PI : theta_delta;
 
-				// prevent drawing a line from current position to start of arc.
-				cairo_new_sub_path(ctx.Cairo());
-
 				const int n_segs = int(std::ceil(std::abs(t2/(M_PI*0.5+0.001))));
+				//std::cerr << "theta1=" << t1 << ", theta_delta=" << t2 << ", n_segs=" << n_segs << std::endl;
 				for(int i = 0; i < n_segs; i++) {
 					const double th0 = t1 + i * t2 / n_segs;
 					const double th1 = t1 + (i + 1) * t2 / n_segs;
@@ -383,8 +380,8 @@ namespace KRE
 					const double t = (8.0 / 3.0) * std::sin(th_half * 0.5) * std::sin(th_half * 0.5) / std::sin(th_half);
 					const double x1 = a*(std::cos(th0) - t * std::sin(th0));
 					const double y1 = b*(std::sin(th0) + t * std::cos(th0));
-					const double x3 = a*cos (th1);
-					const double y3 = b*sin (th1);
+					const double x3 = a*std::cos(th1);
+					const double y3 = b*std::sin(th1);
 					const double x2 = x3 + a*(t * std::sin(th1));
 					const double y2 = y3 + b*(-t * std::cos(th1));
 					cairo_curve_to(ctx.Cairo(), 
@@ -396,8 +393,6 @@ namespace KRE
 						yc + sinp*x3 + cosp*y3);
 				}
 
-				cairo_restore(ctx.Cairo());
-				cairo_move_to(ctx.Cairo(), x2, y2);
 				ctx.ClearControlPoints();
 			}
 			bool smooth_;
