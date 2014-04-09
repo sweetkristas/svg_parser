@@ -937,7 +937,6 @@ namespace KRE
 		{
 		public:
 			group(const ptree& pt) : shapes(pt,std::set<std::string>()) {
-				display_ptree(pt);
 				for(auto& v : pt) {
 					if(v.first == "path") {
 						shapes_.emplace_back(new path(v.second));
@@ -956,7 +955,9 @@ namespace KRE
 					} else if(v.first == "g") {
 						shapes_.emplace_back(new group(v.second));
 					} else if(v.first == "defs") {
-						//defs_.emplace_back(new group(v.second.get_value<std::string>()));
+						defs_.emplace_back(new group(v.second));
+					} else if(v.first == "clipPath") {
+						clip_path_.emplace_back(new group(v.second));
 					} else if(v.first == "use") {
 						// XXX
 					} else if(v.first == "<xmlattr>") {
@@ -967,9 +968,6 @@ namespace KRE
 						std::cerr << "SVG: group unhandled child element: '" << v.first << "' : '" << v.second.data() << "'" << std::endl;
 					}
 				}
-				for(auto& s : defs_) {
-					std::cerr << "DEF: " << s->ID() << std::endl;
-				}
 			}
 			virtual ~group() {
 			}
@@ -978,9 +976,18 @@ namespace KRE
 					s->CairoRender(cairo);
 				}
 			}
+			shapes_ptr FindChild(const std::string& id) {
+				for(auto& s : shapes_) {
+					if(s->ID() == id) {
+						return s;
+					}
+				}
+				return shapes_ptr();
+			}
 		private:
 			std::vector<shapes_ptr> shapes_;
 			std::vector<shapes_ptr> defs_;
+			std::vector<shapes_ptr> clip_path_;
 		};
 
 		class SVGElement
