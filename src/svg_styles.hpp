@@ -101,7 +101,8 @@ namespace KRE
 			double stroke_miterlimit_;
 			std::vector<svg_length> stroke_dasharray_;
 			double stroke_dashoffset_;
-			double alpha_;
+			bool opacity_set_;
+			double opacity_;
 		};
 
 		enum class FontStyle {

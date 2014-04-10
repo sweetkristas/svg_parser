@@ -69,10 +69,23 @@ namespace KRE
 			paint stroke_color_top() const {
 				return stroke_color_stack_.top();
 			}
+
+			void opacity_push(double alpha) {
+				opacity_stack_.push(alpha);
+			}
+			double opacity_pop() {
+				double alpha = opacity_stack_.top();
+				opacity_stack_.pop();
+				return alpha;
+			}
+			double opacity_top() const {
+				return opacity_stack_.top();
+			}
 		private:
 			cairo_t* cairo_;
 			std::stack<paint> fill_color_stack_;
 			std::stack<paint> stroke_color_stack_;
+			std::stack<double> opacity_stack_;
 		};
 
 	}

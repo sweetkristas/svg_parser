@@ -35,6 +35,8 @@ namespace KRE
 {
 	namespace SVG
 	{
+		typedef std::vector<std::pair<svg_length,svg_length>> point_list;
+
 		class shapes
 		{
 		public:
@@ -110,5 +112,76 @@ namespace KRE
 			std::vector<shapes_ptr> clip_path_;
 		};
 	
+		class rectangle : public shapes
+		{
+		public:
+			rectangle(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~rectangle();
+		private:
+			void render_shape_internal(render_context& ctx) const;
+			virtual void handle_cairo_render(render_context& ctx) const override;
+			virtual void handle_clip_render(render_context& ctx) const override;
+			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			svg_length x_;
+			svg_length y_;
+			svg_length rx_;
+			svg_length ry_;
+			svg_length width_;
+			svg_length height_;
+			bool is_rounded_;
+		};
+
+		class line : public shapes
+		{
+		public:
+			line(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~line();
+		private:
+			void render_shape_internal(render_context& ctx) const;
+			virtual void handle_cairo_render(render_context& ctx) const override;
+			virtual void handle_clip_render(render_context& ctx) const override;
+			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			svg_length x1_;
+			svg_length y1_;
+			svg_length x2_;
+			svg_length y2_;
+		};
+
+		class polyline : public shapes
+		{
+		public:
+			polyline(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~polyline();
+		private:
+			void render_shape_internal(render_context& ctx) const;
+			virtual void handle_cairo_render(render_context& ctx) const override;
+			virtual void handle_clip_render(render_context& ctx) const override;
+			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			point_list points_;
+		};
+
+		class text : public shapes
+		{
+		public:
+			text(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~text();
+		private:
+			void render_shape_internal(render_context& ctx) const;
+			virtual void handle_cairo_render(render_context& ctx) const override;
+			virtual void handle_clip_render(render_context& ctx) const override;
+			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			std::string text_;
+			std::vector<svg_length> x_;
+			std::vector<svg_length> y_;
+			std::vector<svg_length> dx_;
+			std::vector<svg_length> dy_;
+			std::vector<double> rotate_;
+			svg_length text_length_;
+			enum class LengthAdjust {
+				SPACING,
+				SPACING_AND_GLYPHS,
+			};
+			LengthAdjust adjust_;
+		};
 	}
 }

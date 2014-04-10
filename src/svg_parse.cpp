@@ -88,13 +88,15 @@ namespace KRE
 			cairo_set_line_width(ctx.cairo(), 1.0);
 			ctx.fill_color_push(paint(0,0,0,255));
 			ctx.stroke_color_push(paint(0,0,0,0));
+			ctx.opacity_push(1.0);
 
 			for(auto p : svg_data_) {
 				p->cairo_render(ctx);
 			}
 
-			ctx.fill_color_pop();
+			ctx.opacity_pop();
 			ctx.stroke_color_pop();
+			ctx.fill_color_pop();
 		}
 	}
 }

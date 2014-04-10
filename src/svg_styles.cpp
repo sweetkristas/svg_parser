@@ -35,7 +35,8 @@ namespace KRE
 			stroke_linecap_(LineCap::INHERIT),
 			stroke_miterlimit_(0.0),
 			stroke_dashoffset_(0.0),
-			alpha_(1.0)
+			opacity_set_(false),
+			opacity_(1.0)
 		{
 		}
 
@@ -72,6 +73,9 @@ namespace KRE
 
 		void fill::apply_colors(render_context& ctx) const 
 		{
+			if(opacity_set_) {
+				ctx.opacity_push(opacity_);
+			}
 			apply_fill_color(ctx);
 			apply_stroke_color(ctx);
 		}
@@ -80,7 +84,7 @@ namespace KRE
 		{
 			if(fill_color_) {
 				if(fill_color_->has_color()) {
-					ctx.fill_color_push(paint(fill_color_->r(), fill_color_->g(), fill_color_->b(), int(alpha_*255)));
+					ctx.fill_color_push(paint(fill_color_->r(), fill_color_->g(), fill_color_->b(), int(ctx.opacity_top()*255.0)));
 
 				/*auto pattern = cairo_get_source(cairo);
 				switch(cairo_pattern_get_type(pattern)) {
@@ -123,7 +127,7 @@ namespace KRE
 		{
 			if(stroke_color_) {
 				if(stroke_color_->has_color()) {
-					ctx.stroke_color_push(paint(stroke_color_->r(), stroke_color_->g(), stroke_color_->b(), int(alpha_*255)));
+					ctx.stroke_color_push(paint(stroke_color_->r(), stroke_color_->g(), stroke_color_->b(), int(ctx.opacity_top()*255.0)));
 				} else {
 					ctx.stroke_color_push(paint(0,0,0,0));
 				}
@@ -135,6 +139,9 @@ namespace KRE
 			}
 			if(stroke_color_) {
 				ctx.stroke_color_pop();
+			}
+			if(opacity_set_) {
+				ctx.opacity_pop();
 			}
 		}
 		
@@ -250,8 +257,10 @@ namespace KRE
 		}
 
 		void fill::set_opacity(const std::string& opacity) {
+
 			try {
-				alpha_ = boost::lexical_cast<double>(opacity);
+				opacity_ = boost::lexical_cast<double>(opacity);
+				opacity_set_ = true;
 			} catch(const boost::bad_lexical_cast&) {
 				ASSERT_LOG(false, "Unable to convert value: '" << opacity << "' to a number");
 			}

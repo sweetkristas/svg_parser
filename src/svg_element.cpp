@@ -61,6 +61,18 @@ namespace KRE
 					shapes_.emplace_back(new path(this, v.second));
 				} else if(v.first == "g") {
 					shapes_.emplace_back(new group(this, v.second));
+				} else if(v.first == "rect") {
+					shapes_.emplace_back(new rectangle(this, v.second));
+				} else if(v.first == "text") {
+					shapes_.emplace_back(new text(this, v.second));
+				} else if(v.first == "line") {
+					shapes_.emplace_back(new line(this,v.second));
+				} else if(v.first == "polyline") {
+					shapes_.emplace_back(new polyline(this,v.second));
+				} else if(v.first == "desc") {
+					// ignore
+				} else if(v.first == "title") {
+					// ignore
 				/*} else if(v.first == "use") {
 					// XXX
 				*/
