@@ -34,3 +34,5 @@
 *.suo
 *.user
 *.unsuccessfulbuild
+
+*.png
