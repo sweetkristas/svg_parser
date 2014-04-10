@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "formatter.hpp"
+#include "asserts.hpp"
 
 namespace KRE
 {
@@ -47,26 +47,26 @@ namespace KRE
 			ARC,
 		};
 
-		class CommandContext
+		class path_cmd_context
 		{
 		public:
-			CommandContext(cairo_t* cairo) 
+			path_cmd_context(cairo_t* cairo) 
 				: cairo_(cairo), 
 				cp1x_(0), 
 				cp1y_(0),
 				control_point_set_(false) {
 			}
-			~CommandContext() {}
-			cairo_t* Cairo() { return cairo_; }
-			void SetControlPoints(double x, double y) {
+			~path_cmd_context() {}
+			cairo_t* cairo_context() { return cairo_; }
+			void set_control_points(double x, double y) {
 				cp1x_ = x;
 				cp1y_ = y;
 				control_point_set_ = true;
 			}
-			void ClearControlPoints() {
+			void clear_control_points() {
 				control_point_set_ = false;
 			}
-			void GetControlPoints(double* x, double* y) {
+			void get_control_points(double* x, double* y) {
 				ASSERT_LOG(x != NULL, "x is null. no place for result");
 				ASSERT_LOG(y != NULL, "y is null. no place for result");
 				if(control_point_set_) {
@@ -83,23 +83,23 @@ namespace KRE
 			double cp1y_;
 		};
 
-		class PathCommand
+		class path_command
 		{
 		public:
-			virtual ~PathCommand();
+			virtual ~path_command();
 
-			void CairoRender(CommandContext& ctx);
+			void cairo_render(path_cmd_context& ctx);
 
-			bool IsAbsolute() const { return absolute_; }
-			bool IsRelative() const { return !absolute_; }
+			bool is_absolute() const { return absolute_; }
+			bool is_relative() const { return !absolute_; }
 		protected:
-			PathCommand(PathInstruction ins, bool absolute);
+			path_command(PathInstruction ins, bool absolute);
 		private:
-			virtual void HandleCairoRender(CommandContext& ctx) = 0;
+			virtual void handle_cairo_render(path_cmd_context& ctx) = 0;
 			PathInstruction ins_;
 			bool absolute_;
 		};
-		typedef std::shared_ptr<PathCommand> PathCommandPtr;
+		typedef std::shared_ptr<path_command> path_commandPtr;
 
 		class parsing_exception : public std::exception
 		{
@@ -113,6 +113,6 @@ namespace KRE
 			std::string s_;
 		};
 
-		std::vector<PathCommandPtr> parse_path(const std::string& s);
+		std::vector<path_commandPtr> parse_path(const std::string& s);
 	}
 }

@@ -23,36 +23,21 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
 #include <cairo/cairo.h>
+#include <memory>
 
 namespace KRE
 {
-	class Transform;
-	typedef std::shared_ptr<Transform> TransformPtr;
-
-	class Transform
+	namespace SVG
 	{
-	public:
-		virtual ~Transform();
-		virtual std::string as_string() const = 0;
-		static std::vector<TransformPtr> Factory(const std::string& s);
-		void Apply(cairo_t* cairo);
-	protected:
-		enum class TransformType {
-			MATRIX,
-			TRANSLATE,
-			SCALE,
-			ROTATE,
-			SKEW_X,
-			SKEW_Y,
-		};
-		Transform(TransformType tt);
-	private:
-		virtual void HandleApply(cairo_t* cairo) = 0;
+		class shapes;
+		typedef std::shared_ptr<shapes> shapes_ptr;
+		typedef std::shared_ptr<const shapes> const_shapes_ptr;
 
-		TransformType type_;
-	};
+		class element;
+		typedef std::shared_ptr<element> element_ptr;
+
+		class transform;
+		typedef std::shared_ptr<transform> transform_ptr;
+	}
 }

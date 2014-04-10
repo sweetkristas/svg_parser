@@ -7,7 +7,7 @@
 #include "asserts.hpp"
 #include "filesystem.hpp"
 #include "profile_timer.hpp"
-#include "SVGParse.hpp"
+#include "svg_parse.hpp"
 #include "SDLWrapper.hpp"
 
 namespace 
@@ -44,11 +44,12 @@ int main(int argc, char* argv[])
 	cairo_t* cairo = cairo_create(surface);
 
 	for(auto& filename : args) {
-		KRE::SVG::Parse p(filename);
+		KRE::SVG::parse p(filename);
 
 		{
 			profile::manager pman("cairo_render");
-			p.CairoRender(cairo);
+			KRE::SVG::render_context ctx(cairo);
+			p.cairo_render(ctx);
 		}
 
 		using namespace boost::filesystem;

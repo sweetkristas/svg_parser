@@ -23,28 +23,36 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <cairo/cairo.h>
+#include <boost/property_tree/ptree.hpp>
+#include "geometry.hpp"
+#include "svg_fwd.hpp"
+#include "svg_length.hpp"
+#include "svg_render.hpp"
 
 namespace KRE
 {
 	namespace SVG
 	{
-		class SVGElement;
-		typedef std::shared_ptr<SVGElement> SVGElementPtr;
-
-		class Parse
+		class element
 		{
 		public:
-			Parse(const std::string& filename);
-			~Parse();
-
-			void CairoRender(cairo_t* cairo) const;
+			element(const boost::property_tree::ptree& svg_data);
+			virtual ~element();
+			const_shapes_ptr find_child_id(const std::string& id) const;
+			void cairo_render(render_context& ctx) const;
 		private:
-			std::vector<SVGElementPtr> svg_data_;
+			std::string xmlns_;
+			rectf view_box_;
+			svg_length x_;
+			svg_length y_;
+			svg_length width_;
+			svg_length height_;
+			std::vector<shapes_ptr> shapes_;
+			//PrserveAspectRatio preserve_aspect_ratio_;
+			enum ZoomAndPan {
+				ZOOM_AND_PAN_DISABLE,
+				ZOOM_AND_PAN_MAGNIFY,
+			} zoom_and_pan_;
 		};
 	}
 }

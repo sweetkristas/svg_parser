@@ -40,7 +40,8 @@ reflected point (i.e., (newx1, newy1), the first control point of the current pa
 #include <list>
 
 #include "asserts.hpp"
-#include "SVGPathParse.hpp"
+#include "formatter.hpp"
+#include "svg_path_parse.hpp"
 
 namespace KRE
 {
@@ -66,160 +67,160 @@ namespace KRE
 			}
 		}
 
-		PathCommand::PathCommand(PathInstruction ins, bool absolute)
+		path_command::path_command(PathInstruction ins, bool absolute)
 			: ins_(ins), absolute_(absolute)
 		{
 		}
 
-		PathCommand::~PathCommand()
+		path_command::~path_command()
 		{
 		}
 
-		void PathCommand::CairoRender(CommandContext& ctx)
+		void path_command::cairo_render(path_cmd_context& ctx)
 		{
-			HandleCairoRender(ctx);
+			handle_cairo_render(ctx);
 
-			auto status = cairo_status(ctx.Cairo());
+			auto status = cairo_status(ctx.cairo_context());
 			ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status));
 		}
 
-		class MoveToCommand : public PathCommand
+		class move_to_command : public path_command
 		{
 		public:
-			MoveToCommand(bool absolute, double x, double y)
-				: PathCommand(PathInstruction::MOVETO, absolute), 
+			move_to_command(bool absolute, double x, double y)
+				: path_command(PathInstruction::MOVETO, absolute), 
 				x_(x), 
 				y_(y) 
 			{
 			}
-			virtual ~MoveToCommand() {}
+			virtual ~move_to_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
-				if(IsAbsolute()) {
-					cairo_move_to(ctx.Cairo(), x_, y_); 
+			void handle_cairo_render(path_cmd_context& ctx) override {
+				if(is_absolute()) {
+					cairo_move_to(ctx.cairo_context(), x_, y_); 
 				} else {
-					cairo_rel_move_to(ctx.Cairo(), x_, y_);
+					cairo_rel_move_to(ctx.cairo_context(), x_, y_);
 				}
-				ctx.ClearControlPoints();
+				ctx.clear_control_points();
 			}
 			double x_;
 			double y_;
 		};
 
-		class LineToCommand : public PathCommand
+		class line_to_command : public path_command
 		{
 		public:
-			LineToCommand(bool absolute, double x, double y)
-				: PathCommand(PathInstruction::LINETO, absolute),
+			line_to_command(bool absolute, double x, double y)
+				: path_command(PathInstruction::LINETO, absolute),
 				x_(x),
 				y_(y)
 			{
 			}
-			virtual ~LineToCommand() {}
+			virtual ~line_to_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
-				if(IsAbsolute()) {
-					cairo_line_to(ctx.Cairo(), x_, y_);
+			void handle_cairo_render(path_cmd_context& ctx) override {
+				if(is_absolute()) {
+					cairo_line_to(ctx.cairo_context(), x_, y_);
 				} else {
-					cairo_rel_line_to(ctx.Cairo(), x_, y_);
+					cairo_rel_line_to(ctx.cairo_context(), x_, y_);
 				}
-				ctx.ClearControlPoints();
+				ctx.clear_control_points();
 			}
 			double x_;
 			double y_;
 		};
 
-		class ClosePathCommand : public PathCommand
+		class closepath_command : public path_command
 		{
 		public:
-			ClosePathCommand() : PathCommand(PathInstruction::CLOSEPATH, true)
+			closepath_command() : path_command(PathInstruction::CLOSEPATH, true)
 			{
 			}
-			virtual ~ClosePathCommand() {}
+			virtual ~closepath_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
-				cairo_close_path(ctx.Cairo());
-				ctx.ClearControlPoints();
+			void handle_cairo_render(path_cmd_context& ctx) override {
+				cairo_close_path(ctx.cairo_context());
+				ctx.clear_control_points();
 			}
 		};
 
-		class LineToHCommand : public PathCommand
+		class line_to_h_command : public path_command
 		{
 		public:
-			LineToHCommand(bool absolute, double x)
-				: PathCommand(PathInstruction::LINETO_H, absolute),
+			line_to_h_command(bool absolute, double x)
+				: path_command(PathInstruction::LINETO_H, absolute),
 				x_(x)
 			{
 			}
-			virtual ~LineToHCommand() {}
+			virtual ~line_to_h_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
-				if(IsAbsolute()) {
+			void handle_cairo_render(path_cmd_context& ctx) override {
+				if(is_absolute()) {
 					double cx, cy;
-					cairo_get_current_point(ctx.Cairo(), &cx, &cy);
-					cairo_line_to(ctx.Cairo(), x_, cy);
+					cairo_get_current_point(ctx.cairo_context(), &cx, &cy);
+					cairo_line_to(ctx.cairo_context(), x_, cy);
 				} else {
-					cairo_rel_line_to(ctx.Cairo(), x_, 0.0);
+					cairo_rel_line_to(ctx.cairo_context(), x_, 0.0);
 				}
 			}
 			double x_;
 		};
 
-		class LineToVCommand : public PathCommand
+		class line_to_v_command : public path_command
 		{
 		public:
-			LineToVCommand(bool absolute, double y)
-				: PathCommand(PathInstruction::LINETO_V, absolute),
+			line_to_v_command(bool absolute, double y)
+				: path_command(PathInstruction::LINETO_V, absolute),
 				y_(y)
 			{
 			}
-			virtual ~LineToVCommand() {}
+			virtual ~line_to_v_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
-				if(IsAbsolute()) {
+			void handle_cairo_render(path_cmd_context& ctx) override {
+				if(is_absolute()) {
 					double cx, cy;
-					cairo_get_current_point(ctx.Cairo(), &cx, &cy);
-					cairo_line_to(ctx.Cairo(), cx, y_);
+					cairo_get_current_point(ctx.cairo_context(), &cx, &cy);
+					cairo_line_to(ctx.cairo_context(), cx, y_);
 				} else {
-					cairo_rel_line_to(ctx.Cairo(), 0.0, y_);
+					cairo_rel_line_to(ctx.cairo_context(), 0.0, y_);
 				}
-				ctx.ClearControlPoints();
+				ctx.clear_control_points();
 			}
 			double y_;
 		};
 
-		class CubicBezierCommand : public PathCommand
+		class cubic_bezier_command : public path_command
 		{
 		public:
-			CubicBezierCommand(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y, double cp2x, double cp2y)
-				: PathCommand(PathInstruction::CUBIC_BEZIER, absolute),
+			cubic_bezier_command(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y, double cp2x, double cp2y)
+				: path_command(PathInstruction::CUBIC_BEZIER, absolute),
 				smooth_(smooth),
 				x_(x), y_(y), 
 				cp1x_(cp1x), cp1y_(cp1y), 
 				cp2x_(cp2x), cp2y_(cp2y)
 			{
 			}
-			virtual ~CubicBezierCommand() {}
+			virtual ~cubic_bezier_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
+			void handle_cairo_render(path_cmd_context& ctx) override {
 				double c0x, c0y;
-				cairo_get_current_point(ctx.Cairo(), &c0x, &c0y);
+				cairo_get_current_point(ctx.cairo_context(), &c0x, &c0y);
 				if(smooth_) {
-					ctx.GetControlPoints(&cp1x_, &cp1y_);
+					ctx.get_control_points(&cp1x_, &cp1y_);
 					cp1x_ = 2.0*c0x - cp1x_;
 					cp1y_ = 2.0*c0y - cp1y_;
-					if(!IsAbsolute()) {
+					if(!is_absolute()) {
 						cp1x_ -= c0x;
 						cp1y_ -= c0y;
 					}
 				}
-				if(IsAbsolute()) {
-					cairo_curve_to(ctx.Cairo(), cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
+				if(is_absolute()) {
+					cairo_curve_to(ctx.cairo_context(), cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
 				} else {
-					cairo_rel_curve_to(ctx.Cairo(), cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
+					cairo_rel_curve_to(ctx.cairo_context(), cp1x_, cp1y_, cp2x_, cp2y_, x_, y_);
 				}
 				// we always write control points in absolute co-ords
-				ctx.SetControlPoints(IsAbsolute() ? cp2x_ : cp2x_ + c0x, IsAbsolute() ? cp2y_ : cp2y_ + c0y);
+				ctx.set_control_points(is_absolute() ? cp2x_ : cp2x_ + c0x, is_absolute() ? cp2y_ : cp2y_ + c0y);
 			}
 			bool smooth_;
 			double x_;
@@ -232,27 +233,27 @@ namespace KRE
 			double cp2y_;
 		};
 
-		class QuadraticBezierCommand : public PathCommand
+		class quadratic_bezier_command : public path_command
 		{
 		public:
-			QuadraticBezierCommand(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y)
-				: PathCommand(PathInstruction::CUBIC_BEZIER, absolute),
+			quadratic_bezier_command(bool absolute, bool smooth, double x, double y, double cp1x, double cp1y)
+				: path_command(PathInstruction::CUBIC_BEZIER, absolute),
 				smooth_(smooth),
 				x_(x), y_(y), 
 				cp1x_(cp1x), cp1y_(cp1y)
 			{
 			}
-			virtual ~QuadraticBezierCommand() {}
+			virtual ~quadratic_bezier_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
+			void handle_cairo_render(path_cmd_context& ctx) override {
 				double c0x, c0y;
-				cairo_get_current_point(ctx.Cairo(), &c0x, &c0y);
+				cairo_get_current_point(ctx.cairo_context(), &c0x, &c0y);
 				if(smooth_) {
 					double cp1x, cp1y;
-					ctx.GetControlPoints(&cp1x, &cp1y);
+					ctx.get_control_points(&cp1x, &cp1y);
 					cp1x_ = 2.0*c0x - cp1x;
 					cp1y_ = 2.0*c0y - cp1y;
-					if(!IsAbsolute()) {
+					if(!is_absolute()) {
 						cp1x_ -= c0x;
 						cp1y_ -= c0y;
 					}
@@ -264,7 +265,7 @@ namespace KRE
 				dy = y_;
 				acp1x = cp1x_;
 				acp1y = cp1y_;
-				if(!IsAbsolute()) {
+				if(!is_absolute()) {
 					dx += c0x;
 					dy += c0y;
 					acp1x += c0x;
@@ -275,10 +276,10 @@ namespace KRE
 				const double cpx2 = dx + 2.0/3.0 * (acp1x - dx);
 				const double cpy2 = dy + 2.0/3.0 * (acp1y - dy);
 
-				cairo_curve_to(ctx.Cairo(), cpx1, cpy1, cpx2, cpy2, x_, y_);
+				cairo_curve_to(ctx.cairo_context(), cpx1, cpy1, cpx2, cpy2, x_, y_);
 
 				// we always write control points in absolute co-ords
-				ctx.SetControlPoints(IsAbsolute() ? cp1x_ : cp1x_ + c0x, IsAbsolute() ? cp1y_ : cp1y_ + c0y);
+				ctx.set_control_points(is_absolute() ? cp1x_ : cp1x_ + c0x, is_absolute() ? cp1y_ : cp1y_ + c0y);
 			}
 			bool smooth_;
 			double x_;
@@ -288,11 +289,11 @@ namespace KRE
 			double cp1y_;
 		};
 
-		class EllipticalArcCommand : public PathCommand
+		class elliptical_arc_command : public path_command
 		{
 		public:
-			EllipticalArcCommand(bool absolute, double x, double y, double rx, double ry, double x_axis_rot, bool large_arc, bool sweep)
-				: PathCommand(PathInstruction::CUBIC_BEZIER, absolute),
+			elliptical_arc_command(bool absolute, double x, double y, double rx, double ry, double x_axis_rot, bool large_arc, bool sweep)
+				: path_command(PathInstruction::CUBIC_BEZIER, absolute),
 				x_(x), y_(y), 
 				rx_(rx), ry_(ry), 
 				large_arc_flag_(large_arc), 
@@ -301,19 +302,19 @@ namespace KRE
 				x_axis_rotation_ = x_axis_rot / 180.0 * M_PI;
 				//std::cerr << "Elliptical arc: end(" << x << "," << y << "), axis(" << rx << "," << ry << "), x_axis_rot(" << x_axis_rot << "), large_arc(" << large_arc << "), sweep(" << sweep << ")" << std::endl;
 			}
-			virtual ~EllipticalArcCommand() {}
+			virtual ~elliptical_arc_command() {}
 		private:
-			void HandleCairoRender(CommandContext& ctx) override {
+			void handle_cairo_render(path_cmd_context& ctx) override {
 				double x1, y1;
-				cairo_get_current_point(ctx.Cairo(), &x1, &y1);
+				cairo_get_current_point(ctx.cairo_context(), &x1, &y1);
 
 				// calculate some ellipse stuff
 				// a is the length of the major axis
 				// b is the length of the minor axis
 				double a = rx_;
 				double b = ry_;
-				const double x2 = IsAbsolute() ? x_ : x_ + x1;
-				const double y2 = IsAbsolute() ? y_ : y_ + y1;
+				const double x2 = is_absolute() ? x_ : x_ + x1;
+				const double y2 = is_absolute() ? y_ : y_ + y1;
 
 				// start and end points in the same location is equivalent to not drawing the arc.
 				if(std::abs(x1-x2) < DBL_EPSILON && std::abs(y1-y2) < DBL_EPSILON) {
@@ -384,7 +385,7 @@ namespace KRE
 					const double y3 = b*std::sin(th1);
 					const double x2 = x3 + a*(t * std::sin(th1));
 					const double y2 = y3 + b*(-t * std::cos(th1));
-					cairo_curve_to(ctx.Cairo(), 
+					cairo_curve_to(ctx.cairo_context(), 
 						xc + cosp*x1 - sinp*y1, 
 						yc + sinp*x1 + cosp*y1, 
 						xc + cosp*x2 - sinp*y2, 
@@ -393,7 +394,7 @@ namespace KRE
 						yc + sinp*x3 + cosp*y3);
 				}
 
-				ctx.ClearControlPoints();
+				ctx.clear_control_points();
 			}
 			bool smooth_;
 			double x_;
@@ -498,7 +499,7 @@ namespace KRE
 				double x, y;
 				match_coordinate_pair(x, y);
 				// emit
-				cmds_.emplace_back(new MoveToCommand(absolute, x, y));
+				cmds_.emplace_back(new move_to_command(absolute, x, y));
 				match_comma_wsp_opt();
 				return match_lineto_argument_sequence(absolute);
 			}
@@ -507,7 +508,7 @@ namespace KRE
 				double x, y;
 				if(match_coordinate_pair(x, y)) {
 					// emit
-					cmds_.emplace_back(new LineToCommand(absolute, x, y));
+					cmds_.emplace_back(new line_to_command(absolute, x, y));
 					match_comma_wsp_opt();
 					match_lineto_argument_sequence(absolute);
 				}
@@ -594,7 +595,7 @@ namespace KRE
 				path_.pop_front();
 				switch(c) {
 					case 'Z': case 'z': 
-						cmds_.emplace_back(new ClosePathCommand()); 
+						cmds_.emplace_back(new closepath_command()); 
 						break;
 					case 'L':  case 'l': 
 						match_wsp_star();
@@ -632,9 +633,9 @@ namespace KRE
 				}
 				// emit
 				if(ins == PathInstruction::LINETO_H) {
-					cmds_.emplace_back(new LineToHCommand(absolute, v));
+					cmds_.emplace_back(new line_to_h_command(absolute, v));
 				} else if(ins == PathInstruction::LINETO_V) {
-					cmds_.emplace_back(new LineToVCommand(absolute, v));
+					cmds_.emplace_back(new line_to_v_command(absolute, v));
 				} else {
 					ASSERT_LOG(false, "Unexpected command given.");
 				}
@@ -650,7 +651,7 @@ namespace KRE
 					return false;
 				}
 				// emit
-				cmds_.emplace_back(new CubicBezierCommand(absolute, smooth, x, y, cp1x, cp1y, cp2x, cp2y));
+				cmds_.emplace_back(new cubic_bezier_command(absolute, smooth, x, y, cp1x, cp1y, cp2x, cp2y));
 				match_wsp_star();
 				return match_curveto_argument_sequence(absolute, smooth);
 			}
@@ -689,7 +690,7 @@ namespace KRE
 					return false;
 				}
 				// emit
-				cmds_.emplace_back(new QuadraticBezierCommand(absolute, smooth, x, y, cp1x, cp1y));
+				cmds_.emplace_back(new quadratic_bezier_command(absolute, smooth, x, y, cp1x, cp1y));
 				match_wsp_star();
 				return match_bezierto_argument_sequence(absolute, smooth);
 			}
@@ -728,11 +729,11 @@ namespace KRE
 				rx = std::abs(rx);
 				ry = std::abs(ry);
 				if(rx < DBL_EPSILON) {
-					cmds_.emplace_back(new LineToVCommand(absolute, ry));
+					cmds_.emplace_back(new line_to_v_command(absolute, ry));
 				} else if(ry < DBL_EPSILON) {
-					cmds_.emplace_back(new LineToHCommand(absolute, rx));
+					cmds_.emplace_back(new line_to_h_command(absolute, rx));
 				} else {
-					cmds_.emplace_back(new EllipticalArcCommand(absolute, x, y, rx, ry, x_axis_rot, large_arc, sweep));
+					cmds_.emplace_back(new elliptical_arc_command(absolute, x, y, rx, ry, x_axis_rot, large_arc, sweep));
 				}
 				match_wsp_star();
 				return match_arcto_argument_sequence(absolute);
@@ -774,13 +775,13 @@ namespace KRE
 				}
 				return true;
 			}
-			const std::vector<PathCommandPtr>& get_command_list() const { return cmds_; }
+			const std::vector<path_commandPtr>& get_command_list() const { return cmds_; }
 		private:
 			std::list<char> path_;
-			std::vector<PathCommandPtr> cmds_;
+			std::vector<path_commandPtr> cmds_;
 		};
 
-		std::vector<PathCommandPtr> parse_path(const std::string& s)
+		std::vector<path_commandPtr> parse_path(const std::string& s)
 		{
 			path_parser pp(s);
 			return pp.get_command_list();
