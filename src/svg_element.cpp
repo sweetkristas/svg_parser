@@ -67,6 +67,8 @@ namespace KRE
 					shapes_.emplace_back(new text(this, v.second));
 				} else if(v.first == "line") {
 					shapes_.emplace_back(new line(this,v.second));
+				} else if(v.first == "circle") {
+					shapes_.emplace_back(new circle(this,v.second));
 				} else if(v.first == "polyline") {
 					shapes_.emplace_back(new polyline(this,v.second));
 				} else if(v.first == "desc") {
@@ -107,6 +109,7 @@ namespace KRE
 		}
 
 		void element::cairo_render(render_context& ctx) const {
+			// XXX Need to do some normalising of co-ordinates to the viewBox.			
 			for(auto& s : shapes_) {
 				s->cairo_render(ctx);
 			}

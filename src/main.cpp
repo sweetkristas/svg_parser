@@ -12,8 +12,8 @@
 
 namespace 
 {
-	const int width = 512;
-	const int height = 512;
+	const int width = 1200;
+	const int height = 400;
 }
 
 int main(int argc, char* argv[])
@@ -134,11 +134,12 @@ int main(int argc, char* argv[])
 			SDL_Delay(500);
 		}
 
-		cairo_destroy(cairo);
-		cairo_surface_destroy(surface);
-
 		SDL_DestroyTexture(tex_);
 	}
+
+	cairo_destroy(cairo);
+	cairo_surface_destroy(surface);
+
 	SDL_Quit();
 	return 0;
 }

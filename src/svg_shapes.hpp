@@ -130,6 +130,23 @@ namespace KRE
 			svg_length height_;
 			bool is_rounded_;
 		};
+		
+		class circle : public shapes
+		{
+		public:
+			// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
+			circle(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~circle();
+		private:
+			void render_shape_internal(render_context& ctx) const;
+			virtual void handle_cairo_render(render_context& ctx) const override;
+			virtual void handle_clip_render(render_context& ctx) const override;
+			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+
+			svg_length cx_;
+			svg_length cy_;
+			svg_length radius_;
+		};
 
 		class line : public shapes
 		{

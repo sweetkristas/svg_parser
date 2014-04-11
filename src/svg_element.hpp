@@ -40,6 +40,11 @@ namespace KRE
 			virtual ~element();
 			const_shapes_ptr find_child_id(const std::string& id) const;
 			void cairo_render(render_context& ctx) const;
+
+			double x() { return x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
+			double y() { return y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
+			double width() { return width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
+			double height() { return height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
 		private:
 			std::string xmlns_;
 			rectf view_box_;

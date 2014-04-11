@@ -91,7 +91,9 @@ namespace KRE
 					} else if(attr.first == "stroke-dasharray") {
 						fill_.set_stroke_dasharray(attr.second.data());
 					} else if(attr.first == "color") {
+						// XXX There is some question about this attribute effect things.
 						fill_.set_fill_color(attr.second.data());
+						fill_.set_stroke_color(attr.second.data());
 					} else if(attr.first == "stroke-dashoffset") {
 						fill_.set_stroke_dashoffset(attr.second.data());
 					} else if(attr.first == "opacity") {
@@ -221,62 +223,63 @@ namespace KRE
 			}
 		}
 
-		class circle : public shapes
+		// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
+		circle::circle(element* doc, const ptree& pt) 
+			: shapes(doc, pt, list_of("cx")("cy")("r")) 
 		{
-		public:
-			// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
-			circle(element* doc, const ptree& pt) 
-				: shapes(doc, pt, list_of("cx")("cy")("r")) 
-			{
-				// XXX We should probably directly access the following attributes 
-				// but meh.
-				auto attributes = pt.get_child_optional("<xmlattr>");
-				if(attributes) {
-					for(auto& attr : *attributes) {
-						if(attr.first == "cx") {
-							cx_ = svg_length(attr.second.data());
-						} else if(attr.first == "cy") {
-							cy_ = svg_length(attr.second.data());
-						} else if(attr.first == "r") {
-							radius_ = svg_length(attr.second.data());
-						}
+			// XXX We should probably directly access the following attributes 
+			// but meh.
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				for(auto& attr : *attributes) {
+					if(attr.first == "cx") {
+						cx_ = svg_length(attr.second.data());
+					} else if(attr.first == "cy") {
+						cy_ = svg_length(attr.second.data());
+					} else if(attr.first == "r") {
+						radius_ = svg_length(attr.second.data());
 					}
 				}
-				if(0) {
-					std::cerr << "SVG: CIRCLE(" << cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
-						<< "," << cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
-						<< "," << radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
-						<< ")" << std::endl;
-				}
 			}
-			virtual ~circle() {}
-		private:
-			void render_shape_internal(render_context& ctx) const {
-				double cx = cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-				double cy = cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-				double r  = radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-				cairo_arc(ctx.cairo(), cx, cy, r, 0.0, 2 * M_PI);
+			if(0) {
+				std::cerr << "SVG: CIRCLE(" << cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+					<< "," << cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+					<< "," << radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+					<< ")" << std::endl;
 			}
-			virtual void handle_cairo_render(render_context& ctx) const override {
-				render_shape_internal(ctx);
+		}
 
-				apply_fill_color(ctx);
-				cairo_fill(ctx.cairo());
-				cairo_fill_preserve(ctx.cairo());
-				apply_stroke_color(ctx);
-				cairo_stroke(ctx.cairo());
-			}
-			virtual void handle_clip_render(render_context& ctx) const override {
-				render_shape_internal(ctx);
-			}
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override {
-				return shapes_ptr();
-			}
+		circle::~circle() 
+		{
+		}
+		
+		void circle::render_shape_internal(render_context& ctx) const 
+		{
+			double cx = cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double cy = cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double r  = radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			cairo_arc(ctx.cairo(), cx, cy, r, 0.0, 2 * M_PI);
+		}
 
-			svg_length cx_;
-			svg_length cy_;
-			svg_length radius_;
-		};
+		void circle::handle_cairo_render(render_context& ctx) const 
+		{
+			render_shape_internal(ctx);
+
+			apply_fill_color(ctx);
+			cairo_fill(ctx.cairo());
+			cairo_fill_preserve(ctx.cairo());
+			apply_stroke_color(ctx);
+			cairo_stroke(ctx.cairo());
+		}
+		void circle::handle_clip_render(render_context& ctx) const 
+		{
+			render_shape_internal(ctx);
+		}
+
+		const_shapes_ptr circle::handle_find_child_id(const std::string& id) const 
+		{
+			return shapes_ptr();
+		}
 
 		rectangle::rectangle(element* doc, const ptree& pt) 
 			: shapes(doc, pt, list_of("x")("y")("width")("height")("rx")("ry")), 
