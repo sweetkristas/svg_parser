@@ -593,6 +593,7 @@ namespace KRE
 
 		void group::handle_cairo_render(render_context& ctx) const 
 		{
+			cairo_push_group(ctx.cairo());
 			if(!clip_path_id().empty()) {
 				auto cp = find_child(clip_path_id());
 				if(cp) {
@@ -606,6 +607,8 @@ namespace KRE
 			for(auto s : shapes_) {
 				s->cairo_render(ctx);
 			}
+			cairo_pop_group_to_source(ctx.cairo());
+			cairo_paint_with_alpha(ctx.cairo(), ctx.opacity_top());
 		}
 
 		const_shapes_ptr group::handle_find_child_id(const std::string& id) const
