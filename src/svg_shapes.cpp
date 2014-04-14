@@ -45,7 +45,7 @@ namespace KRE
 				for(auto it = tok.begin(); it != tok.end(); ++it) {
 					res.emplace_back(*it);
 				}
-				ASSERT_LOG(res.size() % 2 == 0, "'polygon' element has an odd number of points.");
+				ASSERT_LOG(res.size() % 2 == 0, "point list has an odd number of points.");
 				auto it = res.begin();
 				point_list points;
 				while(it != res.end()) {
@@ -59,8 +59,8 @@ namespace KRE
 			}
 		}
 
-		shapes::shapes(element* doc, const ptree& pt, const std::set<std::string>& exclusions)
-				: doc_(doc)
+		shape::shape(element* doc, const ptree& pt)
+				: element(doc, pt)
 		{
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
@@ -70,10 +70,6 @@ namespace KRE
 						if(!d.empty()) {
 							path_ = parse_path(d);
 						}
-					} else if(attr.first == "id") {
-						id_ = attr.second.data();
-					} else if(attr.first == "transform") {
-						transform_list_ = transform::factory(attr.second.data());
 					} else if(attr.first == "fill") {
 						fill_.set_fill_color(attr.second.data());
 					} else if(attr.first == "stroke") {
@@ -124,11 +120,11 @@ namespace KRE
 			}
 		}
 
-		shapes::~shapes() 
+		shape::~shape() 
 		{
 		}
 
-		void shapes::cairo_render(render_context& ctx) const 
+		void shape::cairo_render(render_context& ctx) const 
 		{
 			cairo_save(ctx.cairo());
 			cairo_new_path(ctx.cairo());
@@ -147,7 +143,7 @@ namespace KRE
 			cairo_restore(ctx.cairo());
 		}
 
-		void shapes::clip_render(render_context& ctx) const 
+		void shape::clip_render(render_context& ctx) const 
 		{
 			// XXX do we need to apply transforms and fill rules here?
 			handle_clip_render(ctx);
@@ -160,51 +156,51 @@ namespace KRE
 			}
 		}
 
-		void shapes::apply_fill(render_context& ctx) const 
+		void shape::apply_fill(render_context& ctx) const 
 		{
 			fill_.set_cairo_values(ctx);
 		}
 
-		void shapes::apply_transforms(render_context& ctx) const 
+		void shape::apply_transforms(render_context& ctx) const 
 		{
 			for(auto t : transform_list_) {
 				t->apply(ctx);
 			}
 		}
 
-		void shapes::apply_fill_color(render_context& ctx) const 
+		void shape::apply_fill_color(render_context& ctx) const 
 		{
 			//fill_.apply_fill_color(cairo);
 			auto& fc = ctx.fill_color_top();
 			cairo_set_source_rgba(ctx.cairo(), fc.r()/255.0, fc.g()/255.0, fc.b()/255.0, fc.a()/255.0);
 		}
 
-		void shapes::apply_stroke_color(render_context& ctx) const 
+		void shape::apply_stroke_color(render_context& ctx) const 
 		{
 			//fill_.apply_stroke_color(cairo);
 			auto& sc = ctx.stroke_color_top();
 			cairo_set_source_rgba(ctx.cairo(), sc.r()/255.0, sc.g()/255.0, sc.b()/255.0, sc.a()/255.0);
 		}
 
-		void shapes::apply_font_properties(render_context& ctx) const 
+		void shape::apply_font_properties(render_context& ctx) const 
 		{
 			font_.apply(ctx);
 		}
 
-		const_shapes_ptr shapes::find_child(const std::string& id) const
+		const_shape_ptr shape::find_child(const std::string& id) const
 		{
 			if(doc_ != NULL) {
 				return doc_->find_child_id(id);
 			}
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
-		const_shapes_ptr shapes::find_child_id(const std::string& id) const
+		const_shape_ptr shape::find_child_id(const std::string& id) const
 		{
 			return handle_find_child_id(id);
 		}
 
-		void shapes::render_sub_paths(render_context& ctx) const
+		void shape::render_sub_paths(render_context& ctx) const
 		{
 			if(!cairo_has_current_point(ctx.cairo())) {
 				cairo_move_to(ctx.cairo(), 0, 0);
@@ -225,7 +221,7 @@ namespace KRE
 
 		// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
 		circle::circle(element* doc, const ptree& pt) 
-			: shapes(doc, pt, list_of("cx")("cy")("r")) 
+			: shape(doc, pt, list_of("cx")("cy")("r")) 
 		{
 			// XXX We should probably directly access the following attributes 
 			// but meh.
@@ -276,13 +272,13 @@ namespace KRE
 			render_shape_internal(ctx);
 		}
 
-		const_shapes_ptr circle::handle_find_child_id(const std::string& id) const 
+		const_shape_ptr circle::handle_find_child_id(const std::string& id) const 
 		{
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 		rectangle::rectangle(element* doc, const ptree& pt) 
-			: shapes(doc, pt, list_of("x")("y")("width")("height")("rx")("ry")), 
+			: shape(doc, pt, list_of("x")("y")("width")("height")("rx")("ry")), 
 			is_rounded_(false) {
 			// XXX We should probably directly access the following attributes 
 			// but meh.
@@ -347,13 +343,13 @@ namespace KRE
 			render_shape_internal(ctx);
 		}
 
-		const_shapes_ptr rectangle::handle_find_child_id(const std::string& id) const 
+		const_shape_ptr rectangle::handle_find_child_id(const std::string& id) const 
 		{
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 		polygon::polygon(element* doc, const ptree& pt) 
-			: shapes(doc, pt, list_of("points"))
+			: shape(doc, pt, list_of("points"))
 		{
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
@@ -399,13 +395,13 @@ namespace KRE
 			render_shape_internal(ctx);
 		}
 
-		const_shapes_ptr polygon::handle_find_child_id(const std::string& id) const override 
+		const_shape_ptr polygon::handle_find_child_id(const std::string& id) const override 
 		{
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 		text::text(element* doc, const ptree& pt) 
-			: shapes(doc, pt, list_of("x")("y")("dx")("dy")("rotate")("textLength")("lengthAdjust")),
+			: shape(doc, pt, list_of("x")("y")("dx")("dy")("rotate")("textLength")("lengthAdjust")),
 			adjust_(LengthAdjust::SPACING)
 		{
 			// XXX should we use provided <xmltext> instead?
@@ -464,13 +460,13 @@ namespace KRE
 			render_shape_internal(ctx);
 		}
 
-		const_shapes_ptr text::handle_find_child_id(const std::string& id) const 
+		const_shape_ptr text::handle_find_child_id(const std::string& id) const 
 		{
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 		use_stmt::use_stmt(element* doc, const ptree& pt) 
-			: shapes(doc,pt,list_of("xlink:href")("x")("y")("width")("height")) 
+			: shape(doc,pt,list_of("xlink:href")("x")("y")("width")("height")) 
 		{
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
@@ -540,39 +536,39 @@ namespace KRE
 			render_shape_internal(ctx);
 		}
 
-		const_shapes_ptr use_stmt::handle_find_child_id(const std::string& id) const 
+		const_shape_ptr use_stmt::handle_find_child_id(const std::string& id) const 
 		{
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 		group::group(element* doc, const ptree& pt) 
-			: shapes(doc,pt,std::set<std::string>())
+			: shape(doc,pt,std::set<std::string>())
 		{
 			for(auto& v : pt) {
 				if(v.first == "path") {
-					shapes_.emplace_back(new path(doc,v.second));
+					shape_.emplace_back(new path(doc,v.second));
 				} else if(v.first == "circle") {
-					shapes_.emplace_back(new circle(doc,v.second));
+					shape_.emplace_back(new circle(doc,v.second));
 				} else if(v.first == "rect") {
-					shapes_.emplace_back(new rectangle(doc,v.second));
+					shape_.emplace_back(new rectangle(doc,v.second));
 				} else if(v.first == "text") {
-					shapes_.emplace_back(new text(doc,v.second));
+					shape_.emplace_back(new text(doc,v.second));
 				//} else if(v.first == "ellipse") {
-				//	shapes_.emplace_back(new ellipse(doc,v.second));
+				//	shape_.emplace_back(new ellipse(doc,v.second));
 				} else if(v.first == "line") {
-					shapes_.emplace_back(new line(doc,v.second));
+					shape_.emplace_back(new line(doc,v.second));
 				} else if(v.first == "polyline") {
-					shapes_.emplace_back(new polyline(doc,v.second));
+					shape_.emplace_back(new polyline(doc,v.second));
 				} else if(v.first == "polygon") {
-					shapes_.emplace_back(new polygon(doc,v.second));
+					shape_.emplace_back(new polygon(doc,v.second));
 				} else if(v.first == "g") {
-					shapes_.emplace_back(new group(doc,v.second));
+					shape_.emplace_back(new group(doc,v.second));
 				} else if(v.first == "clipPath") {
 					clip_path_.emplace_back(new group(doc,v.second));
 				} else if(v.first == "defs") {
 					defs_.emplace_back(new group(doc,v.second));
 				} else if(v.first == "use") {
-					shapes_.emplace_back(new use_stmt(doc,v.second));
+					shape_.emplace_back(new use_stmt(doc,v.second));
 				} else if(v.first == "linearGradient") {
 					gradient_list_.emplace_back(new linear_gradient(doc, v.second));
 				} else if(v.first == "desc") {
@@ -595,7 +591,7 @@ namespace KRE
 
 		void group::handle_clip_render(render_context& ctx) const
 		{
-			for(auto s : shapes_) {
+			for(auto s : shape_) {
 				s->clip_render(ctx);
 			}
 		}
@@ -613,14 +609,14 @@ namespace KRE
 				}
 			}
 
-			for(auto s : shapes_) {
+			for(auto s : shape_) {
 				s->cairo_render(ctx);
 			}
 			cairo_pop_group_to_source(ctx.cairo());
 			cairo_paint_with_alpha(ctx.cairo(), ctx.opacity_top());
 		}
 
-		const_shapes_ptr group::handle_find_child_id(const std::string& id) const
+		const_shape_ptr group::handle_find_child_id(const std::string& id) const
 		{
 			for(auto& d : defs_) {
 				if(d->id() == id) {
@@ -631,7 +627,7 @@ namespace KRE
 					return sp;
 				}
 			}
-			for(auto& s : shapes_) {
+			for(auto& s : shape_) {
 				if(s->id() == id) {
 					return s;
 				}
@@ -658,12 +654,12 @@ namespace KRE
 					return gr;
 				}
 			}
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 
 		line::line(element* doc, const ptree& pt)
-			: shapes(doc,pt,list_of("x1")("y1")("x2")("y2")),
+			: shape(doc,pt,list_of("x1")("y1")("x2")("y2")),
 			x1_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
 			y1_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
 			x2_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
@@ -715,14 +711,14 @@ namespace KRE
 			render_shape_internal(ctx);
 		}
 
-		const_shapes_ptr line::handle_find_child_id(const std::string& id) const
+		const_shape_ptr line::handle_find_child_id(const std::string& id) const
 		{
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 
 		polyline::polyline(element* doc, const ptree& pt)
-			: shapes(doc,pt,list_of("points"))
+			: shape(doc,pt,list_of("points"))
 		{
 			// XXX We should probably directly access the following attributes 
 			// but meh.
@@ -769,9 +765,9 @@ namespace KRE
 			render_shape_internal(ctx);
 		}
 
-		const_shapes_ptr polyline::handle_find_child_id(const std::string& id) const
+		const_shape_ptr polyline::handle_find_child_id(const std::string& id) const
 		{
-			return shapes_ptr();
+			return shape_ptr();
 		}
 
 

@@ -105,17 +105,6 @@ namespace KRE
 			double opacity_;
 		};
 
-		enum class FontStyle {
-			INHERIT,
-			NORMAL,
-			ITALIC,
-			OBLIQUE,
-		};
-		enum class FontVariant {
-			INHERIT,
-			NORMAL,
-			SMALL_CAPS,
-		};
 
 		class font_properties
 		{

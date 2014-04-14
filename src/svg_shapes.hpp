@@ -38,18 +38,18 @@ namespace KRE
 	{
 		typedef std::vector<std::pair<svg_length,svg_length>> point_list;
 
-		class shapes : public element
+		class shape : public element
 		{
 		public:
-			shapes(element* doc, const boost::property_tree::ptree& pt);
-			virtual ~shapes();			
+			shape(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~shape();			
 		private:
 			virtual void handle_render(render_context& ctx) const override;
 			void render_sub_paths(render_context& ctx) const;
 			std::vector<path_commandPtr> path_;
 		};
 
-		class rectangle : public shapes
+		class rectangle : public shape
 		{
 		public:
 			rectangle(element* doc, const boost::property_tree::ptree& pt);
@@ -65,7 +65,7 @@ namespace KRE
 			bool is_rounded_;
 		};
 		
-		class circle : public shapes
+		class circle : public shape
 		{
 		public:
 			// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
@@ -78,7 +78,7 @@ namespace KRE
 			svg_length radius_;
 		};
 
-		class line : public shapes
+		class line : public shape
 		{
 		public:
 			line(element* doc, const boost::property_tree::ptree& pt);
@@ -91,7 +91,7 @@ namespace KRE
 			svg_length y2_;
 		};
 
-		class polyline : public shapes
+		class polyline : public shape
 		{
 		public:
 			polyline(element* doc, const boost::property_tree::ptree& pt);
@@ -101,7 +101,7 @@ namespace KRE
 			point_list points_;
 		};
 
-		class polygon : public shapes
+		class polygon : public shape
 		{
 		public:
 			polygon(element* doc, const boost::property_tree::ptree& pt);
@@ -111,7 +111,7 @@ namespace KRE
 			point_list points_;
 		};
 
-		class text : public shapes
+		class text : public shape
 		{
 		public:
 			text(element* doc, const boost::property_tree::ptree& pt);

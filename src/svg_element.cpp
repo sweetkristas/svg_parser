@@ -30,11 +30,11 @@ namespace KRE
 	{
 		using namespace boost::property_tree;
 
-		element::element(const ptree& svg_data) 
-			: x_(0, svg_length::SVG_LENGTHTYPE_PX), 
-			y_(0, svg_length::SVG_LENGTHTYPE_PX)
+		element::element(element* parent, const ptree& pt) 
+			: core_attribs(pt), 
+			parent_(parent)			
 		{
-			const ptree & attributes = svg_data.get_child("<xmlattr>", ptree());
+			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
 			for(auto& attr : attributes) {
 				if(attr.first == "viewBox") {
 					std::stringstream ss(attr.second.data());
@@ -53,12 +53,14 @@ namespace KRE
 					// ignore
 				} else if(attr.first == "preserveAspectRatio") {
 					// XXX to be processed.
+				} else if(attr.first == "transform") {
+					transforms_ = transform::factory(attr.second.data());
 				} else {
 					std::cerr << "SVG: svg unhandled attribute: " << attr.first << " : " << attr.second.data() << std::endl;
 				}
 			}
 
-			for(auto& v : svg_data) {
+			for(auto& v : pt) {
 				if(v.first == "path") {
 					shapes_.emplace_back(new path(this, v.second));
 				} else if(v.first == "g") {

@@ -21,6 +21,7 @@
     <ClCompile Include="..\..\src\svg_paint.cpp" />
     <ClCompile Include="..\..\src\svg_parse.cpp" />
     <ClCompile Include="..\..\src\svg_path_parse.cpp" />
+    <ClCompile Include="..\..\src\svg_style.cpp" />
     <ClCompile Include="..\..\src\svg_styles.cpp" />
     <ClCompile Include="..\..\src\svg_transform.cpp" />
     <ClCompile Include="..\..\src\svg_shapes.cpp" />
@@ -43,6 +44,7 @@
     <ClInclude Include="..\..\src\svg_parse.hpp" />
     <ClInclude Include="..\..\src\svg_path_parse.hpp" />
     <ClInclude Include="..\..\src\svg_render.hpp" />
+    <ClInclude Include="..\..\src\svg_style.hpp" />
     <ClInclude Include="..\..\src\svg_styles.hpp" />
     <ClInclude Include="..\..\src\svg_transform.hpp" />
     <ClInclude Include="..\..\src\svg_shapes.hpp" />
