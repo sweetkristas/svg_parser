@@ -60,6 +60,9 @@ namespace KRE
 			void handle_apply(render_context& ctx) override {
 				cairo_transform(ctx.cairo(), &mat_);
 			}
+			void handle_apply_matrix(cairo_matrix_t* mtx) const override {
+				cairo_matrix_multiply(mtx, mtx, &mat_);
+			}
 			cairo_matrix_t mat_;
 		};
 
@@ -78,6 +81,9 @@ namespace KRE
 			void handle_apply(render_context& ctx) override {
 				//std::cerr << "XXX: " << as_string() << std::endl;
 				cairo_translate(ctx.cairo(), x_, y_);
+			}
+			void handle_apply_matrix(cairo_matrix_t* mtx) const override {
+				cairo_matrix_translate(mtx, x_, y_);
 			}
 			double x_;
 			double y_;
@@ -112,6 +118,15 @@ namespace KRE
 					cairo_translate(ctx.cairo(), -cx_, -cy_);
 				}
 			}
+			void handle_apply_matrix(cairo_matrix_t* mtx) const override {
+				if(std::abs(cx_) < DBL_EPSILON && std::abs(cy_) < DBL_EPSILON) {
+					cairo_matrix_rotate(mtx, angle_);
+				} else {
+					cairo_matrix_translate(mtx, cx_, cy_);
+					cairo_matrix_rotate(mtx, angle_);
+					cairo_matrix_translate(mtx, cx_, cy_);
+				}
+			}
 			double angle_;
 			double cx_;
 			double cy_;
@@ -131,6 +146,9 @@ namespace KRE
 		private:
 			void handle_apply(render_context& ctx) override {
 				cairo_scale(ctx.cairo(), sx_, sy_);
+			}
+			void handle_apply_matrix(cairo_matrix_t* mtx) const override {
+				cairo_matrix_scale(mtx, sx_, sy_);
 			}
 			double sx_;
 			double sy_;
@@ -152,6 +170,9 @@ namespace KRE
 			void handle_apply(render_context& ctx) override {
 				cairo_transform(ctx.cairo(), &mat_);
 			}
+			void handle_apply_matrix(cairo_matrix_t* mtx) const override {
+				cairo_matrix_multiply(mtx, mtx, &mat_);
+			}
 			double sx_;
 			cairo_matrix_t mat_;
 		};
@@ -171,6 +192,9 @@ namespace KRE
 		private:
 			void handle_apply(render_context& ctx) override {
 				cairo_transform(ctx.cairo(), &mat_);
+			}
+			void handle_apply_matrix(cairo_matrix_t* mtx) const override {
+				cairo_matrix_multiply(mtx, mtx, &mat_);
 			}
 			double sy_;
 			cairo_matrix_t mat_;
@@ -325,6 +349,11 @@ namespace KRE
 
 		transform::~transform()
 		{
+		}
+
+		void transform::apply_matrix(cairo_matrix_t* mtx) const
+		{
+			handle_apply_matrix(mtx);
 		}
 	}
 }

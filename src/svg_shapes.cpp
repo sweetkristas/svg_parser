@@ -352,51 +352,57 @@ namespace KRE
 			return shapes_ptr();
 		}
 
-		class polygon : public shapes
+		polygon::polygon(element* doc, const ptree& pt) 
+			: shapes(doc, pt, list_of("points"))
 		{
-		public:
-			polygon(element* doc, const ptree& pt) : shapes(doc, pt, list_of("points"))
-			{
-				auto attributes = pt.get_child_optional("<xmlattr>");
-				if(attributes) {
-					for(auto& attr : *attributes) {
-						if(attr.first == "points") {
-							points_ = create_point_list(attr.second.data());
-						}
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				for(auto& attr : *attributes) {
+					if(attr.first == "points") {
+						points_ = create_point_list(attr.second.data());
 					}
 				}
 			}
-			virtual ~polygon() {}
-		private:
-			void render_shape_internal(render_context& ctx) const {
-				auto it = points_.begin();
-				cairo_move_to(ctx.cairo(), 
+		}
+
+		polygon::~polygon() 
+		{
+		}
+
+		void polygon::render_shape_internal(render_context& ctx) const 
+		{
+			auto it = points_.begin();
+			cairo_move_to(ctx.cairo(), 
+				it->first.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER), 
+				it->second.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
+			while(it != points_.end()) {
+				cairo_line_to(ctx.cairo(), 
 					it->first.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER), 
 					it->second.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
-				while(it != points_.end()) {
-					cairo_line_to(ctx.cairo(), 
-						it->first.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER), 
-						it->second.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
-					++it;
-				}
-				cairo_close_path(ctx.cairo());
+				++it;
 			}
-			virtual void handle_cairo_render(render_context& ctx) const override {
-				render_shape_internal(ctx);
+			cairo_close_path(ctx.cairo());
+		}
 
-				apply_fill_color(ctx);
-				cairo_fill_preserve(ctx.cairo());
-				apply_stroke_color(ctx);
-				cairo_stroke(ctx.cairo());
-			}
-			virtual void handle_clip_render(render_context& ctx) const override {
-				render_shape_internal(ctx);
-			}
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override {
-				return shapes_ptr();
-			}
-			point_list points_;
-		};
+		void polygon::handle_cairo_render(render_context& ctx) const override 
+		{
+			render_shape_internal(ctx);
+
+			apply_fill_color(ctx);
+			cairo_fill_preserve(ctx.cairo());
+			apply_stroke_color(ctx);
+			cairo_stroke(ctx.cairo());
+		}
+
+		void polygon::handle_clip_render(render_context& ctx) const override 
+		{
+			render_shape_internal(ctx);
+		}
+
+		const_shapes_ptr polygon::handle_find_child_id(const std::string& id) const override 
+		{
+			return shapes_ptr();
+		}
 
 		text::text(element* doc, const ptree& pt) 
 			: shapes(doc, pt, list_of("x")("y")("dx")("dy")("rotate")("textLength")("lengthAdjust")),
@@ -463,80 +469,81 @@ namespace KRE
 			return shapes_ptr();
 		}
 
-		class use : public shapes
+		use_stmt::use_stmt(element* doc, const ptree& pt) 
+			: shapes(doc,pt,list_of("xlink:href")("x")("y")("width")("height")) 
 		{
-		public:
-			use(element* doc, const ptree& pt) 
-				: shapes(doc,pt,list_of("xlink:href")("x")("y")("width")("height")) 
-			{
-				auto attributes = pt.get_child_optional("<xmlattr>");
-				if(attributes) {
-					for(auto& attr : *attributes) {
-						if(attr.first == "xlink:href") {
-							// Basically only supporting inter-document references
-							// so "#some_id" for example.
-							xref_id_ = attr.second.data();
-							if(!xref_id_.empty()) {
-								if(xref_id_[0] != '#') {
-									std::cerr << "Only supporting inter-document cross-references: " << xref_id_ << std::endl;
-								} else {
-									xref_id_ = xref_id_.substr(1);
-								}
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				for(auto& attr : *attributes) {
+					if(attr.first == "xlink:href") {
+						// Basically only supporting inter-document references
+						// so "#some_id" for example.
+						xref_id_ = attr.second.data();
+						if(!xref_id_.empty()) {
+							if(xref_id_[0] != '#') {
+								std::cerr << "Only supporting inter-document cross-references: " << xref_id_ << std::endl;
+							} else {
+								xref_id_ = xref_id_.substr(1);
 							}
-						} else if(attr.first == "x") {
-							x_ = svg_length(attr.second.data());
-						} else if(attr.first == "y") {
-							y_ = svg_length(attr.second.data());
-						} else if(attr.first == "width") {
-							width_ = svg_length(attr.second.data());
-						} else if(attr.first == "height") {
-							height_ = svg_length(attr.second.data());
 						}
+					} else if(attr.first == "x") {
+						x_ = svg_length(attr.second.data());
+					} else if(attr.first == "y") {
+						y_ = svg_length(attr.second.data());
+					} else if(attr.first == "width") {
+						width_ = svg_length(attr.second.data());
+					} else if(attr.first == "height") {
+						height_ = svg_length(attr.second.data());
 					}
 				}
 			}
-			virtual ~use() {}
-		private:
-			void render_shape_internal(render_context& ctx) const {
-				if(xref_id_.empty()) {
-					return;
-				}
+		}
 
-				// Acts as a <g ...> attribute when rendered.
-				double x = x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-				double y = y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-				double w = width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-				double h = height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-				if(x != 0 || y != 0) {
-					// The whole list_of could be more eloquently replaced by an
-					// initialiser list. If certain compilers would actually bother supporting
-					// C++11 features.
-					auto tfr = transform::factory(TransformType::TRANSLATE,list_of(x)(y));
-					tfr->apply(ctx);
-				}
-				/// XXX search for xref_id_ in current svg document, then render it.
-				auto s = find_child(xref_id_);
-				if(s) {
-					s->clip_render(ctx);
-				} else {
-					std::cerr << "WARNING: Couldn't find element '" << xref_id_ << "' in document." << std::endl;
-				}
+		use_stmt::~use_stmt() 
+		{
+		}
+
+		void use_stmt::render_shape_internal(render_context& ctx) const 
+		{
+			if(xref_id_.empty()) {
+				return;
 			}
-			virtual void handle_clip_render(render_context& ctx) const override {
-				render_shape_internal(ctx);
+
+			// Acts as a <g ...> attribute when rendered.
+			double x = x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double y = y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double w = width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double h = height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			if(x != 0 || y != 0) {
+				// The whole list_of could be more eloquently replaced by an
+				// initialiser list. If certain compilers would actually bother supporting
+				// C++11 features.
+				auto tfr = transform::factory(TransformType::TRANSLATE,list_of(x)(y));
+				tfr->apply(ctx);
 			}
-			virtual void handle_cairo_render(render_context& ctx) const override {
-				render_shape_internal(ctx);
+			/// XXX search for xref_id_ in current svg document, then render it.
+			auto s = find_child(xref_id_);
+			if(s) {
+				s->clip_render(ctx);
+			} else {
+				std::cerr << "WARNING: Couldn't find element '" << xref_id_ << "' in document." << std::endl;
 			}
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override {
-				return shapes_ptr();
-			}
-			svg_length x_;
-			svg_length y_;
-			svg_length width_;
-			svg_length height_;
-			std::string xref_id_;
-		};
+		}
+
+		void use_stmt::handle_clip_render(render_context& ctx) const 
+		{
+			render_shape_internal(ctx);
+		}
+
+		void use_stmt::handle_cairo_render(render_context& ctx) const 
+		{
+			render_shape_internal(ctx);
+		}
+
+		const_shapes_ptr use_stmt::handle_find_child_id(const std::string& id) const 
+		{
+			return shapes_ptr();
+		}
 
 		group::group(element* doc, const ptree& pt) 
 			: shapes(doc,pt,std::set<std::string>())
@@ -565,7 +572,9 @@ namespace KRE
 				} else if(v.first == "defs") {
 					defs_.emplace_back(new group(doc,v.second));
 				} else if(v.first == "use") {
-					shapes_.emplace_back(new use(doc,v.second));
+					shapes_.emplace_back(new use_stmt(doc,v.second));
+				} else if(v.first == "linearGradient") {
+					gradient_list_.emplace_back(new linear_gradient(doc, v.second));
 				} else if(v.first == "desc") {
 					// ignore
 				} else if(v.first == "title") {
@@ -638,6 +647,15 @@ namespace KRE
 				auto sp = cp->find_child_id(id);
 				if(sp) {
 					return sp;
+				}
+			}
+			for(auto& grad : gradient_list_) {
+				if(grad->id() == id) {
+					return grad;
+				}
+				auto gr = grad->find_child_id(id);
+				if(gr) {
+					return gr;
 				}
 			}
 			return shapes_ptr();

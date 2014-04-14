@@ -52,10 +52,12 @@ namespace KRE
 			static std::vector<transform_ptr> factory(const std::string& s);
 			static transform_ptr factory(TransformType, const std::vector<double>& params);
 			void apply(render_context& ctx);
+			void apply_matrix(cairo_matrix_t* mtx) const;
 		protected:
 			transform(TransformType tt);
 		private:
 			virtual void handle_apply(render_context& ctx) = 0;
+			virtual void handle_apply_matrix(cairo_matrix_t* mtx) const = 0;
 
 			TransformType type_;
 		};

@@ -21,36 +21,38 @@
 	   distribution.
 */
 
-#pragma once
-
-#include <cstdint>
-#include <memory>
-#include <string>
+#include "svg_attribs.hpp"
 
 namespace KRE
 {
-	class paint;
-	typedef std::shared_ptr<paint> paint_ptr;
-
-	class paint
+	namespace SVG
 	{
-	public:
-		paint(const std::string& s);
-		paint(int r, int g, int b, int a=255);
-		virtual ~paint();
-		bool has_color() const { return !no_color_; }
-		uint8_t r() const { return r_; }
-		uint8_t g() const { return g_; }
-		uint8_t b() const { return b_; }
-		uint8_t a() const { return a_; }
-		void set_alpha(double a);
-		void set_alpha(int a);
-		static paint_ptr from_string(const std::string& s);
-	private:
-		uint8_t r_;
-		uint8_t g_;
-		uint8_t b_;
-		uint8_t a_;
-		bool no_color_;
-	};
+		using namespace boost::property_tree;
+
+		core_attribs::core_attribs(const ptree& pt)
+		{
+			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+
+			auto id = attributes.get_child_optional("id");
+			if(id) {
+				id_ = id->data();
+			}
+			auto xml_base = attributes.get_child_optional("xml:base");
+			if(xml_base) {
+				xml_base_ = xml_base->data();
+			}
+			auto xml_lang = attributes.get_child_optional("xml:lang");
+			if(xml_lang) {
+				xml_lang_ = xml_lang->data();
+			}
+			auto xml_space = attributes.get_child_optional("xml:space");
+			if(xml_space) {
+				xml_space_ = xml_space->data();
+			}
+		}
+
+		core_attribs::~core_attribs()
+		{
+		}
+	}
 }

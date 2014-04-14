@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
 #include "geometry.hpp"
 #include "svg_fwd.hpp"
 #include "svg_length.hpp"
@@ -33,31 +32,64 @@ namespace KRE
 {
 	namespace SVG
 	{
-		class element
+		// container elements are as follows.
+		//  'g', 'svg', 'defs', 'a', 'glyph', 'marker', 'mask', 'missing-glyph', 'pattern', 'switch', 'symbol'
+		// structural elements
+		//  'g', 'symbol', 'svg', 'defs', 'use'
+		// shape elements
+		//  'path', 'rect', 'circle', 'ellipse', 'line', 'polyline' and 'polygon'
+		// animation elements
+		//  'animateColor', 'animateMotion', 'animateTransform', 'animate' and 'set'
+		// descriptive elements
+		//  'desc', 'metadata', 'title'
+		// gradient elements
+		//  'linearGradient', 'radialGradient'
+		// graphics element
+		//  'circle', 'ellipse', 'image', 'path', 'polygon', 'polyline', 'rect', 'text', 'use'
+
+		//, public conditional_processing_attribs, public graphical_event_attributes, public presentation_attributes
+		class element : public core_attribs
 		{
 		public:
-			element(const boost::property_tree::ptree& svg_data);
+			element(element* parent, const boost::property_tree::ptree& svg_data);
 			virtual ~element();
-			const_shapes_ptr find_child_id(const std::string& id) const;
-			void cairo_render(render_context& ctx) const;
 
-			double x() { return x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
-			double y() { return y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
-			double width() { return width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
-			double height() { return height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
+			void render(render_context& ctx) const;
+
+			void apply_transforms(render_context& ctx) const;
+			void apply_matrix_transforms(cairo_matrix_t* mtx) const;
 		private:
-			std::string xmlns_;
-			rectf view_box_;
+			virtual void handle_render(render_context& ctx) const = 0;
+
+			// top level parent element. if NULL then this is the top level element.
+			element* parent_;
+
+			// list of transforms
+			std::vector<transform_ptr> transforms_;
+			// CSS stylesheets aren't supported, so we don't support 'class'/'style'  attributes.
+			// std::string class_;
+			// std::string style_;
+			bool external_resources_required_;
+
+			// IRI reference to clip-path to be used for drawing.
+			// Only relevant for container and graphics elements.
+			std::string clip_path_ref_;
+		};
+
+		// can only hold animation and descriptive elements.
+		class use_element : public element
+		{
+		public:
+			use_element(element* parent, const boost::property_tree::ptree& pt);
+			virtual ~use_element();
+		private:
+			virtual void handle_render(render_context& ctx) const override;
 			svg_length x_;
 			svg_length y_;
 			svg_length width_;
 			svg_length height_;
-			std::vector<shapes_ptr> shapes_;
-			//PrserveAspectRatio preserve_aspect_ratio_;
-			enum ZoomAndPan {
-				ZOOM_AND_PAN_DISABLE,
-				ZOOM_AND_PAN_MAGNIFY,
-			} zoom_and_pan_;
+			std::string xlink_href_;
 		};
+
 	}
 }

@@ -26,6 +26,8 @@
 #include <cairo/cairo.h>
 #include <memory>
 
+#include "svg_attribs.hpp"
+
 namespace KRE
 {
 	namespace SVG
@@ -39,5 +41,10 @@ namespace KRE
 
 		class transform;
 		typedef std::shared_ptr<transform> transform_ptr;
+
+		class container;
+		typedef std::shared_ptr<container> container_ptr;
+
+		class core_attribs;
 	}
 }

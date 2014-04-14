@@ -23,34 +23,28 @@
 
 #pragma once
 
-#include <cstdint>
-#include <memory>
+#include <boost/property_tree/ptree.hpp>
 #include <string>
 
 namespace KRE
 {
-	class paint;
-	typedef std::shared_ptr<paint> paint_ptr;
-
-	class paint
+	namespace SVG
 	{
-	public:
-		paint(const std::string& s);
-		paint(int r, int g, int b, int a=255);
-		virtual ~paint();
-		bool has_color() const { return !no_color_; }
-		uint8_t r() const { return r_; }
-		uint8_t g() const { return g_; }
-		uint8_t b() const { return b_; }
-		uint8_t a() const { return a_; }
-		void set_alpha(double a);
-		void set_alpha(int a);
-		static paint_ptr from_string(const std::string& s);
-	private:
-		uint8_t r_;
-		uint8_t g_;
-		uint8_t b_;
-		uint8_t a_;
-		bool no_color_;
-	};
+		class core_attribs
+		{
+		public:
+			core_attribs(const boost::property_tree::ptree& pt);
+			virtual ~core_attribs();
+
+			const std::string& id() const { return id_; };
+			const std::string& base() const { return xml_base_; };
+			const std::string& lang() const { return xml_lang_; };
+			const std::string& space() const { return xml_space_; };
+		private:
+			std::string id_;
+			std::string xml_base_;
+			std::string xml_lang_;
+			std::string xml_space_;
+		};
+	}
 }

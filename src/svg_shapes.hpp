@@ -26,6 +26,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <set>
 #include "svg_fwd.hpp"
+#include "svg_element.hpp"
 #include "svg_path_parse.hpp"
 #include "svg_render.hpp"
 #include "svg_styles.hpp"
@@ -37,91 +38,24 @@ namespace KRE
 	{
 		typedef std::vector<std::pair<svg_length,svg_length>> point_list;
 
-		class shapes
+		class shapes : public element
 		{
 		public:
-			shapes(element* doc, 
-				const boost::property_tree::ptree& pt, 
-				const std::set<std::string>& exclusions);
-			virtual ~shapes();
-			
-			void cairo_render(render_context& ctx) const;
-			void clip_render(render_context& ctx) const;
-			
-			void apply_fill(render_context& ctx) const;
-			void apply_transforms(render_context& ctx) const;
-			void apply_fill_color(render_context& ctx) const;
-			void apply_stroke_color(render_context& ctx) const;
-			void apply_font_properties(render_context& ctx) const;
-			
-			const std::string& id() const { return id_; }
-			const std::string& clip_path_id() const { return clip_path_ref_; }
-			
-			const_shapes_ptr find_child(const std::string& id) const;
-			const_shapes_ptr find_child_id(const std::string& id) const;
-		protected:
-			const font_properties& GetFontProperties() const { return font_; }
+			shapes(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~shapes();			
 		private:
-			virtual void handle_cairo_render(render_context& ctx) const = 0;
-			virtual void handle_clip_render(render_context& ctx) const = 0;
-			virtual const_shapes_ptr handle_find_child_id(const std::string& id) const = 0;
-
+			virtual void handle_render(render_context& ctx) const override;
 			void render_sub_paths(render_context& ctx) const;
-
-			std::string id_;
-			fill fill_;
-			font_properties font_;
-			std::vector<transform_ptr> transform_list_;
 			std::vector<path_commandPtr> path_;
-			std::string clip_path_ref_;
-			element* doc_;
 		};
 
-		class path : public shapes
-		{
-		public:
-			path(element* doc, const boost::property_tree::ptree& pt) 
-				: shapes(doc, pt, std::set<std::string>())
-			{
-			}
-			virtual ~path() {}
-		private:
-			virtual void handle_cairo_render(render_context& ctx) const override {
-				// doesn't need to do anything -- sub-path rendering is handled in base class
-			}
-			virtual void handle_clip_render(render_context& ctx) const override {
-				// doesn't need to do anything -- sub-path rendering is handled in base class
-			}
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override {
-				return shapes_ptr();
-			}
-		};
-
-		class group : public shapes
-		{
-		public:
-			group(element* doc, const boost::property_tree::ptree& pt);
-			virtual ~group();
-		private:
-			virtual void handle_clip_render(render_context& ctx) const override;
-			virtual void handle_cairo_render(render_context& ctx) const override;
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
-
-			std::vector<shapes_ptr> shapes_;
-			std::vector<shapes_ptr> defs_;
-			std::vector<shapes_ptr> clip_path_;
-		};
-	
 		class rectangle : public shapes
 		{
 		public:
 			rectangle(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~rectangle();
 		private:
-			void render_shape_internal(render_context& ctx) const;
-			virtual void handle_cairo_render(render_context& ctx) const override;
-			virtual void handle_clip_render(render_context& ctx) const override;
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			virtual void handle_render(render_context& ctx) const override;
 			svg_length x_;
 			svg_length y_;
 			svg_length rx_;
@@ -138,11 +72,7 @@ namespace KRE
 			circle(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~circle();
 		private:
-			void render_shape_internal(render_context& ctx) const;
-			virtual void handle_cairo_render(render_context& ctx) const override;
-			virtual void handle_clip_render(render_context& ctx) const override;
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
-
+			virtual void handle_render(render_context& ctx) const override;
 			svg_length cx_;
 			svg_length cy_;
 			svg_length radius_;
@@ -154,10 +84,7 @@ namespace KRE
 			line(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~line();
 		private:
-			void render_shape_internal(render_context& ctx) const;
-			virtual void handle_cairo_render(render_context& ctx) const override;
-			virtual void handle_clip_render(render_context& ctx) const override;
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			virtual void handle_render(render_context& ctx) const override;
 			svg_length x1_;
 			svg_length y1_;
 			svg_length x2_;
@@ -170,10 +97,17 @@ namespace KRE
 			polyline(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~polyline();
 		private:
-			void render_shape_internal(render_context& ctx) const;
-			virtual void handle_cairo_render(render_context& ctx) const override;
-			virtual void handle_clip_render(render_context& ctx) const override;
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			virtual void handle_render(render_context& ctx) const override;
+			point_list points_;
+		};
+
+		class polygon : public shapes
+		{
+		public:
+			polygon(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~polygon();
+		private:
+			virtual void handle_render(render_context& ctx) const override;
 			point_list points_;
 		};
 
@@ -183,10 +117,7 @@ namespace KRE
 			text(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~text();
 		private:
-			void render_shape_internal(render_context& ctx) const;
-			virtual void handle_cairo_render(render_context& ctx) const override;
-			virtual void handle_clip_render(render_context& ctx) const override;
-			const_shapes_ptr handle_find_child_id(const std::string& id) const override;
+			virtual void handle_render(render_context& ctx) const override;
 			std::string text_;
 			std::vector<svg_length> x_;
 			std::vector<svg_length> y_;

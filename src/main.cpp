@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 
 		{
 			profile::manager pman("cairo_render");
-			KRE::SVG::render_context ctx(cairo);
+			KRE::SVG::render_context ctx(cairo, width, height);
 			p.cairo_render(ctx);
 		}
 

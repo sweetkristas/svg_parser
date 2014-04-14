@@ -14,7 +14,10 @@
     <ClCompile Include="..\..\src\filesystem.cpp" />
     <ClCompile Include="..\..\src\geometry.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\svg_attribs.cpp" />
+    <ClCompile Include="..\..\src\svg_container.cpp" />
     <ClCompile Include="..\..\src\svg_element.cpp" />
+    <ClCompile Include="..\..\src\svg_gradient.cpp" />
     <ClCompile Include="..\..\src\svg_paint.cpp" />
     <ClCompile Include="..\..\src\svg_parse.cpp" />
     <ClCompile Include="..\..\src\svg_path_parse.cpp" />
@@ -30,8 +33,11 @@
     <ClInclude Include="..\..\src\geometry.hpp" />
     <ClInclude Include="..\..\src\profile_timer.hpp" />
     <ClInclude Include="..\..\src\SDLWrapper.hpp" />
+    <ClInclude Include="..\..\src\svg_attribs.hpp" />
+    <ClInclude Include="..\..\src\svg_container.hpp" />
     <ClInclude Include="..\..\src\svg_element.hpp" />
     <ClInclude Include="..\..\src\svg_fwd.hpp" />
+    <ClInclude Include="..\..\src\svg_gradient.hpp" />
     <ClInclude Include="..\..\src\svg_length.hpp" />
     <ClInclude Include="..\..\src\svg_paint.hpp" />
     <ClInclude Include="..\..\src\svg_parse.hpp" />
@@ -46,6 +52,9 @@
     <Library Include="..\..\..\cairo\external\x86\lib\cairo.lib" />
     <Library Include="..\..\..\SDL\VisualC\SDLmain\Win32\Release\SDL2main.lib" />
     <Library Include="..\..\..\SDL\VisualC\SDL\Win32\Release\SDL2.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\geometry.inl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8DA8C0ED-BBAE-4391-A237-29FF0CAA6283}</ProjectGuid>

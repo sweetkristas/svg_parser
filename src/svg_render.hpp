@@ -36,8 +36,12 @@ namespace KRE
 		class render_context
 		{
 		public:
-			render_context(cairo_t* cairo)
-				: cairo_(cairo)
+			// cairo is the context, width/height are the physical size, in pixels, of
+			// the drawing canvas.
+			render_context(cairo_t* cairo, unsigned width, unsigned height)
+				: cairo_(cairo),
+				width_(width),
+				height_(height)
 			{}
 			~render_context() {
 				ASSERT_LOG(fill_color_stack_.empty(), "Fill color stack in rendering context not empty at exit");
@@ -81,11 +85,15 @@ namespace KRE
 			double opacity_top() const {
 				return opacity_stack_.top();
 			}
+			unsigned width() const { return width_; }
+			unsigned height() const { return height_; }
 		private:
 			cairo_t* cairo_;
 			std::stack<paint> fill_color_stack_;
 			std::stack<paint> stroke_color_stack_;
 			std::stack<double> opacity_stack_;
+			unsigned width_;
+			unsigned height_;
 		};
 
 	}

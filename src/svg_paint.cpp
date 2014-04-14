@@ -294,4 +294,19 @@ namespace KRE
 	paint::~paint()
 	{
 	}
+
+	paint_ptr paint::from_string(const std::string& s)
+	{
+		return paint_ptr(new paint(s));
+	}
+
+	void paint::set_alpha(double a) 
+	{ 
+		a_ = int(255 * clamp(a,0.0,1.0)); 
+	}
+
+	void paint::set_alpha(int a) 
+	{ 
+		a_ = clamp(a,0,255); 
+	}
 }
