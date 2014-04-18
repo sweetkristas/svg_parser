@@ -32,10 +32,24 @@ namespace KRE
 
 		element::element(element* parent, const ptree& pt) 
 			: core_attribs(pt), 
-			parent_(parent)			
+            parent_(parent),
+            external_resources_required_(false)
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-			for(auto& attr : attributes) {
+            auto exts = attributes.get_child_optional("externalResourcesRequired");
+            if(exts) {
+                const std::string& s = exts->data();
+                if(s == "true") {
+                    external_resources_required_ = true;
+                } else if(s == "false") {
+                    external_resources_required_ = false;
+                } else {
+                    ASSERT_LOG(false, "Unrecognised value in 'externalResourcesRequired' attribute: " << s);
+                }
+            }
+            ASSERT_LOG(!external_resources_required_, "We don't support getting external resources.");
+
+            for(auto& attr : attributes) {
 				if(attr.first == "viewBox") {
 					std::stringstream ss(attr.second.data());
 					float x, y, w, h;
@@ -133,5 +147,12 @@ namespace KRE
 				s->cairo_render(ctx);
 			}
 		}
-	}
+
+        void element::apply_transforms(render_context& ctx) const
+        {
+            for(auto& trf : transforms_) {
+                trf->apply(ctx);
+            }
+        }
+    }
 }

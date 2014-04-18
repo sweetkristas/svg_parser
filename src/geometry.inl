@@ -24,7 +24,7 @@
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <regex>
-#include "Geometry.hpp"
+#include "geometry.hpp"
 
 namespace geometry
 {
@@ -89,22 +89,9 @@ namespace geometry
 	}
 
 	template<typename T> inline
-	Rect<T>::Rect(const SDL_Rect& r)
-	  : top_left_(std::min(T(r.x), T(r.x)+T(r.w)), std::min(T(r.y), T(r.y)+T(r.h))),
-		bottom_right_(std::max(T(r.x), T(r.x)+T(r.w)), std::max(T(r.y), T(r.y)+T(r.h)))
-	{
-	}
-
-	template<typename T> inline
 	Rect<T>::Rect(const std::vector<T>& v)
 	{
 		from_vector(v);
-	}
-
-	template<typename T> inline
-	Rect<T>::Rect(const variant& v)
-	{
-		ASSERT_LOG(false, "No template specialisation for Rect<T>(const varaint&)");
 	}
 
 	template<typename T> inline

@@ -23,9 +23,9 @@ int main(int argc, char* argv[])
 	for(int n = 1; n != argc; ++n) {
 		std::string argument(argv[n]);
 		if(argument[0] == '-') {
-			opts.push_back(argument);
+            opts.emplace_back(argument);
 		} else {
-			args.push_back(argument);
+            args.emplace_back(argument);
 		}
 	}
 	if(args.size() < 1) {
@@ -70,7 +70,6 @@ int main(int argc, char* argv[])
 	SDL::SDLPtr manager(new SDL::SDL());
 
 	SDL_WindowPtr window_;
-	SDL_GLContext context_ = NULL;
 	SDL_Renderer* renderer_ = NULL;
 	std::string title("SVG PARSER");
 

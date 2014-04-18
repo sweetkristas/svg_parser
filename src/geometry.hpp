@@ -57,7 +57,6 @@ namespace geometry
 		inline explicit Rect(T x=0, T y=0, T w=0, T h=0);
 		explicit Rect(const std::vector<T>& v);
 		explicit Rect(const std::string& s);
-		explicit Rect(const variant& v);
 		static Rect FromCoordinates(T x1, T y1, T x2, T y2);
 		static Rect from_coordinates(T x1, T y1, T x2, T y2) {
 			return FromCoordinates(x1,y1,x2,y2);
@@ -111,11 +110,6 @@ namespace geometry
 		template<typename F>
 		Rect<F> as_type() const {
 			return Rect<F>::from_coordinates(F(top_left_.x), F(top_left_.y), F(bottom_right_.x), F(bottom_right_.y));
-		}
-
-		SDL_Rect sdl_rect() const {
-			SDL_Rect r = {x(), y(), w(), h()};
-			return r;
 		}
 	private:
 		Point<T> top_left_;

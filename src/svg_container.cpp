@@ -21,8 +21,6 @@
 	   distribution.
 */
 
-#pragma once
-
 #include "svg_container.hpp"
 
 namespace KRE
@@ -31,40 +29,14 @@ namespace KRE
 	{
 		using namespace boost::property_tree;
 
-		container::container(container* parent, const ptree& pt)
-			: element(parent, pt),
-			parent_(parent),
-			external_resources_required_(false)
+        container::container(element* parent, const ptree& pt)
+            : element(parent, pt)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-			auto trf = attributes.get_child_optional("transform");
-			auto exts = attributes.get_child_optional("externalResourcesRequired");
-
-			if(trf) {
-				transforms_ = transform::factory(trf->data());
-			}
-			if(exts) {
-				const std::string& s = exts->data();
-				if(s == "true") {
-					external_resources_required_ = true;
-				} else if(s == "false") {
-					external_resources_required_ = false;
-				} else {
-					ASSERT_LOG(false, "Unrecognised value in 'externalResourcesRequired' attribute: " << s);
-				}
-			}
-			ASSERT_LOG(!external_resources_required_, "We don't support getting external resources.");
+            //const ptree & attributes = pt.get_child("<xmlattr>", ptree());
 		}
 
 		container::~container()
 		{
-		}
-
-		void container::apply_transforms(render_context& ctx) const
-		{
-			for(auto& trf : transforms_) {
-				trf->apply(ctx);
-			}
 		}
 	}
 }
