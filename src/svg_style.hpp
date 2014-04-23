@@ -294,6 +294,7 @@ namespace KRE
 
 		enum class ColorAttrib {
 			INHERIT,
+			NONE,
 			CURRENT_COLOR,
 			VALUE,
 			//ICC_COLOR,
@@ -379,27 +380,59 @@ namespace KRE
 			paint lighting_color_value_;
 		};
 
+		enum class FillRuleAttrib {
+			INHERIT,
+			NONZERO,
+			EVENODD,
+		};
+		enum class LineJoinAttrib {
+			INHERIT,
+			MITER,
+			ROUND,
+			BEVEL,
+		};
+		enum class LineCapAttrib {
+			INHERIT,
+			BUTT,
+			ROUND,
+			SQUARE,
+		};
+		enum class OpacityAttrib {
+			INHERIT,
+			VALUE,
+		};
+
+
 		class painting_properties
 		{
 		public:
 			painting_properties(const boost::property_tree::ptree& pt);
 			virtual ~painting_properties();
 		private:
+			// default none
+			ColorAttrib stroke_;
+			paint stroke_value_;
+			OpacityAttrib stroke_opacity_;
+			double stroke_opacity_value_;
+			// default black
+			ColorAttrib fill_;
+			paint fill_value_;
+			// defualt even-odd
+			FillRuleAttrib fill_rule_;
+			// default 1.0
+			OpacityAttrib fill_opacity_;
+			double fill_opacity_value_;
 			/*
 			    ‘color-interpolation’
 				‘color-interpolation-filters’
 				‘color-profile’
 				‘color-rendering’
-				‘fill’
-				‘fill-opacity’
-				‘fill-rule’
 				‘image-rendering’
 				‘marker’
 				‘marker-end’
 				‘marker-mid’
 				‘marker-start’
 				‘shape-rendering’
-				‘stroke’
 				‘stroke-dasharray’
 				‘stroke-dashoffset’
 				‘stroke-linecap’

@@ -29,7 +29,6 @@
 #include "svg_element.hpp"
 #include "svg_path_parse.hpp"
 #include "svg_render.hpp"
-#include "svg_styles.hpp"
 #include "svg_transform.hpp"
 
 namespace KRE

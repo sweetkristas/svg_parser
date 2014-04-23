@@ -35,23 +35,6 @@ namespace KRE
 {
 	namespace SVG
 	{
-		enum class FillRule {
-			INHERIT,
-			NONZERO,
-			EVENODD,
-		};
-		enum class LineJoin {
-			INHERIT,
-			MITER,
-			ROUND,
-			BEVEL,
-		};
-		enum class LineCap {
-			INHERIT,
-			BUTT,
-			ROUND,
-			SQUARE,
-		};
 
 		class fill
 		{
