@@ -24,6 +24,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 #include <vector>
+#include "svg_fwd.hpp"
 #include "svg_length.hpp"
 #include "svg_paint.hpp"
 
@@ -402,6 +403,66 @@ namespace KRE
 			VALUE,
 		};
 
+		enum class StrokeWidthAttrib {
+			INHERIT,
+			PERCENTAGE,
+			VALUE,
+		};
+
+		enum class MiterLimitAttrib {
+			INHERIT,
+			VALUE,
+		};
+
+		enum class DashArrayAttrib {
+			INHERIT,
+			NONE,
+			VALUE,
+		};
+
+		enum class DashOffsetAttrib {
+			INHERIT,
+			PERCENTAGE,
+			VALUE,
+		};
+
+		enum class ColorInterpolationAttrib {
+			INHERIT,
+			AUTO,
+			sRGBA,
+			linearRGBA,
+		};
+		
+		enum class RenderingAttrib {
+			INHERIT,
+			AUTO,
+			OPTIMIZE_SPEED,
+			OPTIMIZE_QUALITY,
+		};
+
+		enum class ShapeRenderingAttrib {
+			INHERIT,
+			AUTO,
+			OPTIMIZE_SPEED,
+			CRISP_EDGES,
+			GEOMETRIC_PRECISION,
+		};
+
+		enum class TextRenderingAttrib {
+			INHERIT,
+			AUTO,
+			OPTIMIZE_SPEED,
+			OPTIMIZE_LEGIBILITY,
+			GEOMETRIC_PRECISION,
+		};
+
+		enum class ColorProfileAttrib {
+			INHERIT,
+			AUTO,
+			sRGB,
+			NAME,
+			IRI,
+		};
 
 		class painting_properties
 		{
@@ -414,6 +475,22 @@ namespace KRE
 			paint stroke_value_;
 			OpacityAttrib stroke_opacity_;
 			double stroke_opacity_value_;
+			// default 1
+			StrokeWidthAttrib stroke_width_;
+			double stroke_width_value_;
+			// default butt	
+			LineCapAttrib stroke_linecap_;
+			// default miter
+			LineJoinAttrib stroke_linejoin_;
+			// default 4.0
+			MiterLimitAttrib stroke_miter_limit_;
+			double stroke_meter_limit_value_;
+			// default none
+			DashArrayAttrib stroke_dash_array_;
+			point_list stroke_dash_array_value_;
+			// default 0
+			DashOffsetAttrib stroke_dash_offset_;
+			double stroke_dash_offset_value_;
 			// default black
 			ColorAttrib fill_;
 			paint fill_value_;
@@ -422,26 +499,33 @@ namespace KRE
 			// default 1.0
 			OpacityAttrib fill_opacity_;
 			double fill_opacity_value_;
-			/*
-			    ‘color-interpolation’
-				‘color-interpolation-filters’
-				‘color-profile’
-				‘color-rendering’
-				‘image-rendering’
-				‘marker’
-				‘marker-end’
-				‘marker-mid’
-				‘marker-start’
-				‘shape-rendering’
-				‘stroke-dasharray’
-				‘stroke-dashoffset’
-				‘stroke-linecap’
-				‘stroke-linejoin’
-				‘stroke-miterlimit’
-				‘stroke-opacity’
-				‘stroke-width’
-				‘text-rendering’
-			*/
+			// default sRGB
+			ColorInterpolationAttrib color_interpolation_;
+			// default linearRGB
+			ColorInterpolationAttrib color_interpolation_filters_;
+			// default auto
+			RenderingAttrib color_rendering_;
+			// default auto
+			ShapeRenderingAttrib shape_rendering_;
+			// default auto
+			TextRenderingAttrib text_rendering_;
+			// default auto
+			RenderingAttrib image_rendering_;
+			// default auto
+			ColorProfileAttrib color_profile_;
+			std::string color_profile_value_;
+		};
+
+		// Apply to path, line, polyline and polygon elements.
+		class marker_attribs
+		{
+		public:
+			marker_attribs(const boost::property_tree::ptree& pt);
+			virtual ~marker_attribs();
+		private:
+			FuncIriValue start_;
+			FuncIriValue mid_;
+			FuncIriValue end_;
 		};
 	}
 }

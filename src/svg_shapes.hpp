@@ -35,8 +35,6 @@ namespace KRE
 {
 	namespace SVG
 	{
-		typedef std::vector<std::pair<svg_length,svg_length>> point_list;
-
 		class shape : public element
 		{
 		public:
