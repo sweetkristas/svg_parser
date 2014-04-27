@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "svg_attribs.hpp"
+#include "svg_length.hpp"
 
 namespace KRE
 {

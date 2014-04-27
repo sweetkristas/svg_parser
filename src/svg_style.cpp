@@ -141,5 +141,38 @@ namespace KRE
 		{
 		}
 
+		painting_properties::painting_properties(const ptree& pt)
+			: stroke_(ColorAttrib::NONE),
+			stroke_value_(0,0,0),
+			stroke_opacity_(OpacityAttrib::VALUE),
+			stroke_opacity_value_(1.0),
+			stroke_width_(StrokeWidthAttrib::VALUE),
+			stroke_width_value_(1.0),
+			stroke_linecap_(LineCapAttrib::BUTT),
+			stroke_linejoin_(LineJoinAttrib::MITER),
+			stroke_miter_limit_(MiterLimitAttrib::VALUE),
+			stroke_miter_limit_value_(4.0),
+			stroke_dash_array_(DashArrayAttrib::NONE),
+			stroke_dash_offset_(DashOffsetAttrib::VALUE),
+			stroke_dash_offset_value_(0),
+			fill_(ColorAttrib::VALUE),
+			fill_value_(0,0,0),
+			fill_rule_(FillRuleAttrib::EVENODD),
+			fill_opacity_(OpacityAttrib::VALUE),
+			fill_opacity_value_(1.0),
+			color_interpolation_(ColorInterpolationAttrib::sRGBA),
+			color_interpolation_filters_(ColorInterpolationAttrib::linearRGBA),
+			color_rendering_(RenderingAttrib::AUTO),
+			shape_rendering_(ShapeRenderingAttrib::AUTO),
+			text_rendering_(TextRenderingAttrib::AUTO),
+			image_rendering_(RenderingAttrib::AUTO),
+			color_profile_(ColorProfileAttrib::AUTO)
+		{
+		}
+
+		painting_properties::~painting_properties()
+		{
+		}
+
 	}
 }

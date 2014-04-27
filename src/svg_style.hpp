@@ -484,7 +484,7 @@ namespace KRE
 			LineJoinAttrib stroke_linejoin_;
 			// default 4.0
 			MiterLimitAttrib stroke_miter_limit_;
-			double stroke_meter_limit_value_;
+			double stroke_miter_limit_value_;
 			// default none
 			DashArrayAttrib stroke_dash_array_;
 			point_list stroke_dash_array_value_;
