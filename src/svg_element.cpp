@@ -21,6 +21,7 @@
 	   distribution.
 */
 
+#include "svg_container.hpp"
 #include "svg_element.hpp"
 #include "svg_shapes.hpp"
 
@@ -33,7 +34,11 @@ namespace KRE
 		element::element(element* parent, const ptree& pt) 
 			: core_attribs(pt), 
             parent_(parent),
-            external_resources_required_(false)
+            external_resources_required_(false),
+			x_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
+			y_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
+			width_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE),
+			height_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE)
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
             auto exts = attributes.get_child_optional("externalResourcesRequired");
@@ -48,6 +53,23 @@ namespace KRE
                 }
             }
             ASSERT_LOG(!external_resources_required_, "We don't support getting external resources.");
+
+			auto xattr = attributes.get_child_optional("x");
+			if(xattr) {
+				x_ = svg_length(xattr->data());
+			}
+			auto yattr = attributes.get_child_optional("y");
+			if(yattr) {
+				y_ = svg_length(yattr->data());
+			}
+			auto wattr = attributes.get_child_optional("width");
+			if(wattr) {
+				width_ = svg_length(wattr->data());
+			}
+			auto hattr = attributes.get_child_optional("height");
+			if(hattr) {
+				height_ = svg_length(hattr->data());
+			}
 
             for(auto& attr : attributes) {
 				if(attr.first == "viewBox") {
@@ -154,5 +176,10 @@ namespace KRE
                 trf->apply(ctx);
             }
         }
+
+		element_ptr factory(element* parent, const ptree& svg_data)
+		{
+
+		}
     }
 }

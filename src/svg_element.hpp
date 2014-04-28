@@ -25,7 +25,6 @@
 
 #include "geometry.hpp"
 #include "svg_fwd.hpp"
-#include "svg_length.hpp"
 #include "svg_render.hpp"
 
 namespace KRE
@@ -57,7 +56,8 @@ namespace KRE
 			void render(render_context& ctx) const;
 
 			void apply_transforms(render_context& ctx) const;
-			void apply_matrix_transforms(cairo_matrix_t* mtx) const;
+
+			static element_ptr factory(element* parent, const boost::property_tree::ptree& svg_data);
 		private:
 			virtual void handle_render(render_context& ctx) const = 0;
 
@@ -74,6 +74,11 @@ namespace KRE
 			// IRI reference to clip-path to be used for drawing.
 			// Only relevant for container and graphics elements.
 			std::string clip_path_ref_;
+
+			svg_length x_;
+			svg_length y_;
+			svg_length width_;
+			svg_length height_;
 		};
 
 		// can only hold animation and descriptive elements.

@@ -40,7 +40,7 @@ namespace KRE
 			parse(const std::string& filename);
 			~parse();
 
-			void cairo_render(render_context& ctx) const;
+			void render(render_context& ctx) const;
 		private:
 			std::vector<element_ptr> svg_data_;
 		};

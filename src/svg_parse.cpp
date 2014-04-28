@@ -67,18 +67,14 @@ namespace KRE
 			ptree pt;
 			read_xml(filename, pt);
 
-			for(auto& node : pt) {
-				if(node.first == "svg") {
-					svg_data_.emplace_back(new element(node.second));
-				}
-			}
+			svg_data_.emplace_back(element::factory(nullptr, pt));
 		}
 
 		parse::~parse()
 		{
 		}
 
-		void parse::cairo_render(render_context& ctx) const
+		void parse::render(render_context& ctx) const
 		{
 			cairo_set_source_rgb(ctx.cairo(), 0.0, 0.0, 0.0);
 			cairo_set_line_cap(ctx.cairo(), CAIRO_LINE_CAP_BUTT);
@@ -91,7 +87,7 @@ namespace KRE
 			ctx.opacity_push(1.0);
 
 			for(auto p : svg_data_) {
-				p->cairo_render(ctx);
+				p->render(ctx);
 			}
 
 			ctx.opacity_pop();

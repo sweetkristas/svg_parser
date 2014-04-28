@@ -47,8 +47,6 @@ namespace KRE
 		class container;
 		typedef std::shared_ptr<container> container_ptr;
 
-		class core_attribs;
-
 		typedef std::vector<std::pair<svg_length,svg_length>> point_list;
 	}
 }
