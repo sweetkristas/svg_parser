@@ -22,6 +22,7 @@
 */
 
 #include "svg_container.hpp"
+#include "svg_shapes.hpp"
 
 namespace KRE
 {
@@ -32,7 +33,44 @@ namespace KRE
         container::container(element* parent, const ptree& pt)
             : element(parent, pt)
 		{
+			// can contain graphics elements and other container elements.
+			// 'a', 'defs', 'glyph', 'g', 'marker', 'mask', 'missing-glyph', 'pattern', 'svg', 'switch' and 'symbol'.
+			// 'circle', 'ellipse', 'image', 'line', 'path', 'polygon', 'polyline', 'rect', 'text' and 'use'.
+
             //const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+			for(auto& v : pt) {
+				if(v.first == "path") {
+					elements_.emplace_back(new shape(this, v.second));
+				} else if(v.first == "g") {
+					elements_.emplace_back(new group(this, v.second));
+				} else if(v.first == "rect") {
+					elements_.emplace_back(new rectangle(this, v.second));
+				} else if(v.first == "text") {
+					elements_.emplace_back(new text(this, v.second));
+				} else if(v.first == "line") {
+					elements_.emplace_back(new line(this,v.second));
+				} else if(v.first == "circle") {
+					elements_.emplace_back(new circle(this,v.second));
+				} else if(v.first == "polyline") {
+					elements_.emplace_back(new polyline(this,v.second));
+				} else if(v.first == "ellipse") {
+					elements_.emplace_back(new ellipse(this,v.second));
+				} else if(v.first == "desc") {
+					// ignore
+				} else if(v.first == "title") {
+					// ignore
+				} else if(v.first == "use") {
+					elements_.emplace_back(new use_element(this,v.second));
+				} else if(v.first == "defs") {
+					elements_.emplace_back(new group(this,v.second));
+				} else if(v.first == "<xmlattr>") {
+					// ignore
+				} else if(v.first == "<xmlcomment>") {
+					// ignore
+				} else {
+					std::cerr << "SVG: svg unhandled child element: " << v.first << " : " << v.second.data() << std::endl;
+				}
+			}
 		}
 
 		container::~container()

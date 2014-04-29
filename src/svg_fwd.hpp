@@ -32,6 +32,12 @@
 
 namespace KRE
 {
+	template<typename T>
+	T clamp(T value, T min_val, T max_val) 
+	{
+		return std::max(std::min(max_val, value), min_val);
+	}
+
 	namespace SVG
 	{
 		class shapes;
@@ -48,5 +54,6 @@ namespace KRE
 		typedef std::shared_ptr<container> container_ptr;
 
 		typedef std::vector<std::pair<svg_length,svg_length>> point_list;
+
 	}
 }

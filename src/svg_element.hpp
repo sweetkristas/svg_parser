@@ -31,6 +31,8 @@ namespace KRE
 {
 	namespace SVG
 	{
+		typedef geometry::Rect<double> view_box_rect;
+
 		// container elements are as follows.
 		//  'g', 'svg', 'defs', 'a', 'glyph', 'marker', 'mask', 'missing-glyph', 'pattern', 'switch', 'symbol'
 		// structural elements
@@ -57,6 +59,13 @@ namespace KRE
 
 			void apply_transforms(render_context& ctx) const;
 
+			element_ptr find_child(const std::string& id) const;
+
+			const svg_length& x() const { return x_; }
+			const svg_length& y() const { return y_; }
+			const svg_length& width() const { return width_; }
+			const svg_length& height() const { return height_; }
+
 			static element_ptr factory(element* parent, const boost::property_tree::ptree& svg_data);
 		private:
 			virtual void handle_render(render_context& ctx) const = 0;
@@ -79,6 +88,8 @@ namespace KRE
 			svg_length y_;
 			svg_length width_;
 			svg_length height_;
+
+			view_box_rect view_box_;
 		};
 
 		// can only hold animation and descriptive elements.
@@ -89,10 +100,6 @@ namespace KRE
 			virtual ~use_element();
 		private:
 			virtual void handle_render(render_context& ctx) const override;
-			svg_length x_;
-			svg_length y_;
-			svg_length width_;
-			svg_length height_;
 			std::string xlink_href_;
 		};
 

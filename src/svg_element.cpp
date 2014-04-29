@@ -38,7 +38,8 @@ namespace KRE
 			x_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
 			y_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
 			width_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE),
-			height_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE)
+			height_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE),
+			view_box_(0.0,0.0,512.0,512.0)
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
             auto exts = attributes.get_child_optional("externalResourcesRequired");
@@ -70,104 +71,32 @@ namespace KRE
 			if(hattr) {
 				height_ = svg_length(hattr->data());
 			}
-
-            for(auto& attr : attributes) {
-				if(attr.first == "viewBox") {
-					std::stringstream ss(attr.second.data());
-					float x, y, w, h;
-					ss >> x >> y >> w >> h;
-					view_box_ = rectf::from_area(x,y,w,h);
-				} else if(attr.first == "x") {
-					x_ = svg_length(attr.second.data());
-				} else if(attr.first == "y") {
-					y_ = svg_length(attr.second.data());
-				} else if(attr.first == "width") {
-					width_ = svg_length(attr.second.data());
-				} else if(attr.first == "height") {
-					height_ = svg_length(attr.second.data());
-				} else if(attr.first == "xmlns") {
-					// ignore
-				} else if(attr.first == "preserveAspectRatio") {
-					// XXX to be processed.
-				} else if(attr.first == "transform") {
-					transforms_ = transform::factory(attr.second.data());
-				} else {
-					std::cerr << "SVG: svg unhandled attribute: " << attr.first << " : " << attr.second.data() << std::endl;
-				}
+			auto trfs = attributes.get_child_optional("transform");
+			if(trfs) {
+				transforms_ = transform::factory(trfs->data());
 			}
-
-			for(auto& v : pt) {
-				if(v.first == "path") {
-					shapes_.emplace_back(new path(this, v.second));
-				} else if(v.first == "g") {
-					shapes_.emplace_back(new group(this, v.second));
-				} else if(v.first == "rect") {
-					shapes_.emplace_back(new rectangle(this, v.second));
-				} else if(v.first == "text") {
-					shapes_.emplace_back(new text(this, v.second));
-				} else if(v.first == "line") {
-					shapes_.emplace_back(new line(this,v.second));
-				} else if(v.first == "circle") {
-					shapes_.emplace_back(new circle(this,v.second));
-				} else if(v.first == "polyline") {
-					shapes_.emplace_back(new polyline(this,v.second));
-				} else if(v.first == "desc") {
-					// ignore
-				} else if(v.first == "title") {
-					// ignore
-				} else if(v.first == "use") {
-					shapes_.emplace_back(new use_stmt(this,v.second));
-				} else if(v.first == "defs") {
-					defs_.emplace_back(new group(this,v.second));
-				} else if(v.first == "<xmlattr>") {
-					// ignore
-				} else if(v.first == "<xmlcomment>") {
-					// ignore
-				} else {
-					std::cerr << "SVG: svg unhandled child element: " << v.first << " : " << v.second.data() << std::endl;
-				}
+			auto vbox = attributes.get_child_optional("viewBox");
+			if(vbox) {
+				std::vector<std::string> buf = geometry::split(vbox->data(), ",| |;");
+				ASSERT_LOG(buf.size() == 4, "viewBox should have four elements.");
+				view_box_ = view_box_rect(boost::lexical_cast<double>(buf[0]),
+					boost::lexical_cast<double>(buf[1]),
+					boost::lexical_cast<double>(buf[2]),
+					boost::lexical_cast<double>(buf[3]));
 			}
-
 		}
 
 		element::~element()
 		{
 		}
 
-		const_shapes_ptr element::find_child_id(const std::string& id) const
-		{
-			for(auto& d : defs_) {
-				if(d->id() == id) {
-					return d;
-				}
-				auto v = d->find_child_id(id);
-				if(v) {
-					return v;
-				}
-			}
-
-			for(auto& s : shapes_) {
-				if(s->id() == id) {
-					return s;
-				}
-
-				auto v = s->find_child_id(id);
-				if(v) {
-					return v;
-				}
-			}
-			return shapes_ptr();
-		}
-
-		void element::cairo_render(render_context& ctx) const {
+		void element::render(render_context& ctx) const {
 			// XXX Need to do some normalising of co-ordinates to the viewBox.
 			// XXX need to translate if x/y specified and use width/height from svg element if
 			// overriding -- well map them to ctx.width()/ctx.height()
 			// XXX also need to process preserveAspectRatio value.
-			cairo_scale(ctx.cairo(), ctx.width()/view_box_.wf(), ctx.height()/view_box_.hf());
-			for(auto& s : shapes_) {
-				s->cairo_render(ctx);
-			}
+			cairo_scale(ctx.cairo(), ctx.width()/view_box_.w(), ctx.height()/view_box_.h());
+			handle_render(ctx);
 		}
 
         void element::apply_transforms(render_context& ctx) const
@@ -177,9 +106,66 @@ namespace KRE
             }
         }
 
-		element_ptr factory(element* parent, const ptree& svg_data)
+		element_ptr factory(element* parent, const ptree& pt)
 		{
-
+			for(auto& v : pt) {
+				if(v.first == "svg") {
+					return element_ptr(new svg(parent, pt));
+				}
+			}
+			return element_ptr();
 		}
+
+		use_element::use_element(element* parent, const ptree& pt)
+			: element(parent, pt)
+		{
+			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+            auto xlink_href = attributes.get_child_optional("xlink:href");
+			if(xlink_href) {
+				xlink_href_ = xlink_href->data();
+				if(!xlink_href_.empty()) {
+					if(xlink_href_[0] != '#') {
+						std::cerr << "Only supporting inter-document cross-references: " << xlink_href_ << std::endl;
+					} else {
+						xlink_href_ = xlink_href_.substr(1);
+					}
+				}
+			}
+		}
+
+		use_element::~use_element()
+		{
+		}
+
+		void use_element::handle_render(render_context& ctx) const
+		{
+			if(xlink_href_.empty()) {
+				return;
+			}
+
+			// Acts as a <g ...> attribute when rendered.
+			double x1 = x().value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double y1 = y().value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double w = width().value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double h = height().value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			if(x1 != 0 || y1 != 0) {
+				// The whole list_of could be more eloquently replaced by an
+				// initialiser list. If certain compilers would actually bother supporting
+				// C++11 features.
+				std::vector<double> coords;
+				coords.push_back(x1);
+				coords.push_back(y1);
+				auto tfr = transform::factory(TransformType::TRANSLATE,coords);
+				tfr->apply(ctx);
+			}
+			/// XXX search for xref_id_ in current svg document, then render it.
+			auto s = find_child(xlink_href_);
+			if(s) {
+				s->render(ctx);
+			} else {
+				std::cerr << "WARNING: Couldn't find element '" << xlink_href_ << "' in document." << std::endl;
+			}
+		}
+
     }
 }

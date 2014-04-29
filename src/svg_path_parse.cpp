@@ -59,12 +59,6 @@ namespace KRE
 				const double dot_uv = ux*vx + uy*vy;
 				return sign * std::acos(dot_uv/(length_u*length_v));
 			}
-
-			template<typename T>
-			T clamp(T value, T min_val, T max_val) 
-			{
-				return std::max(std::min(max_val, value), min_val);
-			}
 		}
 
 		path_command::path_command(PathInstruction ins, bool absolute)

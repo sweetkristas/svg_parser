@@ -65,7 +65,6 @@ namespace KRE
 		class circle : public shape
 		{
 		public:
-			// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
 			circle(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~circle();
 		private:
@@ -73,6 +72,19 @@ namespace KRE
 			svg_length cx_;
 			svg_length cy_;
 			svg_length radius_;
+		};
+
+		class ellipse : public shape
+		{
+		public:
+			ellipse(element* doc, const boost::property_tree::ptree& pt);
+			virtual ~ellipse();
+		private:
+			virtual void handle_render(render_context& ctx) const override;
+			svg_length cx_;
+			svg_length cy_;
+			svg_length rx_;
+			svg_length ry_;
 		};
 
 		class line : public shape

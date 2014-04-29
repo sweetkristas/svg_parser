@@ -34,8 +34,6 @@ namespace KRE
 {
 	namespace SVG
 	{
-		typedef geometry::Rect<double> view_box_rect;
-
 		enum class ZoomAndPan {
 			DISABLE,
 			MAGNIFY,
@@ -89,8 +87,15 @@ namespace KRE
 			virtual ~symbol();
 		private:
 			virtual void handle_render(render_context& ctx) const override;
-			view_box_rect view_box_;
-			//PreserveAspectRatio preserve_aspect_ratio_;
+		};
+
+		class group : public container
+		{
+		public:
+			group(element* parent, const boost::property_tree::ptree& pt);
+			virtual ~group();
+		private:
+			virtual void handle_render(render_context& ctx) const override;
 		};
 
 		// Used only for looking up child elements. Not rendered directly.
