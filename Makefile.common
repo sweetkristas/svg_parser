@@ -1,0 +1,22 @@
+#
+# This file contains lists of object files for our build targets.
+# Please keep every file in separate lines to make diff and patching easier.
+#
+
+# Game engine
+objects = \
+	src/filesystem.o \
+	src/main.o \
+	src/svg_container.o \
+	src/svg_gradient.o \
+	src/svg_parse.o \
+	src/svg_shapes.o \
+	src/svg_styles.o \
+	src/utils.o \
+	src/geometry.o \
+	src/svg_attribs.o \
+	src/svg_element.o \
+	src/svg_paint.o \
+	src/svg_path_parse.o \
+	src/svg_style.o \
+	src/svg_transform.o
