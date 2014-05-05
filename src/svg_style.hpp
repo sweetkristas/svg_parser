@@ -262,7 +262,6 @@ namespace KRE
 			TEXT,
 			WAIT,
 			HELP,
-			FUNC_IRI,
 		};
 
 		enum class Display {
@@ -311,10 +310,11 @@ namespace KRE
 			Clip clip_;
 			// if clip_ == Clip::SHAPE then use the following to define
 			// clip shape box.
-			svg_length clip_x_;
-			svg_length clip_y_;
-			svg_length clip_w_;
-			svg_length clip_h_;
+			svg_length clip_x1_;
+			svg_length clip_y1_;
+			svg_length clip_x2_;
+			svg_length clip_y2_;
+			std::vector<std::string> cursor_funciri_;
 			Cursor cursor_;
 			Display display_;
 			Visibility visibility_;

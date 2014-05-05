@@ -21,7 +21,7 @@
 	   distribution.
 */
 
-#include<boost/tokenizer.hpp>
+#include <boost/tokenizer.hpp>
 #include <map>
 
 #include "asserts.hpp"
