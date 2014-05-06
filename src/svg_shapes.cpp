@@ -62,58 +62,9 @@ namespace KRE
 		{
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
-				for(auto& attr : *attributes) {
-					if(attr.first == "d") {
-						auto& d = attr.second.data();
-						if(!d.empty()) {
-							path_ = parse_path(d);
-						}
-					} else if(attr.first == "fill") {
-						fill_.set_fill_color(attr.second.data());
-					} else if(attr.first == "stroke") {
-						fill_.set_stroke_color(attr.second.data());
-					} else if(attr.first == "stroke-width") {
-						fill_.set_stroke_width(attr.second.data());
-					} else if(attr.first == "fill-rule") {
-						fill_.set_fill_rule(attr.second.data());
-					} else if(attr.first == "stroke-linejoin") {
-						fill_.set_stroke_linejoin(attr.second.data());
-					} else if(attr.first == "stroke-linecap") {
-						fill_.set_stroke_linecap(attr.second.data());
-					} else if(attr.first == "stroke-miterlimit") {
-						fill_.set_stroke_miterlimit(attr.second.data());
-					} else if(attr.first == "stroke-dasharray") {
-						fill_.set_stroke_dasharray(attr.second.data());
-					} else if(attr.first == "color") {
-						// XXX There is some question about this attribute effect things.
-						fill_.set_fill_color(attr.second.data());
-						fill_.set_stroke_color(attr.second.data());
-					} else if(attr.first == "stroke-dashoffset") {
-						fill_.set_stroke_dashoffset(attr.second.data());
-					} else if(attr.first == "opacity") {
-						fill_.set_opacity(attr.second.data());
-					} else if(attr.first == "font-family") {
-						font_.set_font_family(attr.second.data());
-					} else if(attr.first == "font-size") {
-						font_.set_font_size(attr.second.data());
-					} else if(attr.first == "letter-spacing") {
-						font_.set_letter_spacing(attr.second.data());
-					} else if(attr.first == "overflow") {
-						// ignore overflow element. it should only apply to 'svg','symbol','image','pattern','marker'
-					} else if(attr.first == "clip-path") {
-						// only internal references of the form "url(#some_id)" are supported
-						// invalid url's are treated as not existing.
-						std::string funciri = attr.second.data();
-						if(funciri.substr(0,5) == "url(#" && funciri.back() == ')') {
-							clip_path_ref_ = funciri.substr(5, funciri.size()-6);
-						} else {
-							std::cerr << "clip-path iri not in expected format: " << funciri << std::endl;
-						}
-					} else {
-						if(exclusions.find(attr.first) == exclusions.end()) {
-							std::cerr << "SVG: path unhandled attribute: '" << attr.first << "' : '" << attr.second.data() << "'" << std::endl;
-						}
-					}
+				auto dpath = attributes->get_child_optional("d");
+				if(dpath && !dpath->data.empty()) {
+					path_ = parse_path(dpath->data());
 				}
 			}
 		}
@@ -140,18 +91,19 @@ namespace KRE
 		circle::circle(element* doc, const ptree& pt) 
 			: shape(doc, pt) 
 		{
-			// XXX We should probably directly access the following attributes 
-			// but meh.
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
-				for(auto& attr : *attributes) {
-					if(attr.first == "cx") {
-						cx_ = svg_length(attr.second.data());
-					} else if(attr.first == "cy") {
-						cy_ = svg_length(attr.second.data());
-					} else if(attr.first == "r") {
-						radius_ = svg_length(attr.second.data());
-					}
+				auto cx = attributes->get_child_optional("cx");
+				if(cx) {
+					cx_ = svg_length(cx->data());
+				}
+				auto cy = attributes->get_child_optional("cy");
+				if(cy) {
+					cy_ = svg_length(cy->data());
+				}
+				auto r = attributes->get_child_optional("r");
+				if(r) {
+					radius_ = svg_length(r->data());
 				}
 			}
 			if(0) {
@@ -183,7 +135,7 @@ namespace KRE
 			rx_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
 			ry_(0, svg_length::SVG_LENGTHTYPE_NUMBER)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
             auto cx = attributes.get_child_optional("cx");
             if(cx) {
 				cx_ = svg_length(cx->data());
@@ -226,7 +178,7 @@ namespace KRE
 			: shape(doc, pt), 
 			is_rounded_(false) 
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
             auto x = attributes.get_child_optional("x");
 			if(x) {
 				x_ = svg_length(x->data());
@@ -278,7 +230,7 @@ namespace KRE
 		polygon::polygon(element* doc, const ptree& pt) 
 			: shape(doc, pt)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
             auto points = attributes.get_child_optional("points");
 			if(points) {
 				points_ = create_point_list(points->data());
@@ -313,7 +265,7 @@ namespace KRE
 			// XXX should we use provided <xmltext> instead?
 			text_ = pt.get_value<std::string>();
 
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
             auto x = attributes.get_child_optional("x");
 			if(x) {
 				//x_ = svg_length(x->data());
@@ -371,123 +323,6 @@ namespace KRE
 			shape::render(ctx);
 		}
 
-		group::group(element* doc, const ptree& pt) 
-			: shape(doc,pt,std::set<std::string>())
-		{
-			for(auto& v : pt) {
-				if(v.first == "path") {
-					shape_.emplace_back(new path(doc,v.second));
-				} else if(v.first == "circle") {
-					shape_.emplace_back(new circle(doc,v.second));
-				} else if(v.first == "rect") {
-					shape_.emplace_back(new rectangle(doc,v.second));
-				} else if(v.first == "text") {
-					shape_.emplace_back(new text(doc,v.second));
-				//} else if(v.first == "ellipse") {
-				//	shape_.emplace_back(new ellipse(doc,v.second));
-				} else if(v.first == "line") {
-					shape_.emplace_back(new line(doc,v.second));
-				} else if(v.first == "polyline") {
-					shape_.emplace_back(new polyline(doc,v.second));
-				} else if(v.first == "polygon") {
-					shape_.emplace_back(new polygon(doc,v.second));
-				} else if(v.first == "g") {
-					shape_.emplace_back(new group(doc,v.second));
-				} else if(v.first == "clipPath") {
-					clip_path_.emplace_back(new group(doc,v.second));
-				} else if(v.first == "defs") {
-					defs_.emplace_back(new group(doc,v.second));
-				} else if(v.first == "use") {
-					shape_.emplace_back(new use_stmt(doc,v.second));
-				} else if(v.first == "linearGradient") {
-					gradient_list_.emplace_back(new linear_gradient(doc, v.second));
-				} else if(v.first == "desc") {
-					// ignore
-				} else if(v.first == "title") {
-					// ignore
-				} else if(v.first == "<xmlattr>") {
-					// ignore
-				} else if(v.first == "<xmlcomment>") {
-					// ignore
-				} else {
-					std::cerr << "SVG: group unhandled child element: '" << v.first << "' : '" << v.second.data() << "'" << std::endl;
-				}
-			}
-		}
-
-		group::~group() 
-		{
-		}
-
-		void group::handle_clip_render(render_context& ctx) const
-		{
-			for(auto s : shape_) {
-				s->clip_render(ctx);
-			}
-		}
-
-		void group::handle_cairo_render(render_context& ctx) const 
-		{
-			cairo_push_group(ctx.cairo());
-			if(!clip_path_id().empty()) {
-				auto cp = find_child(clip_path_id());
-				if(cp) {
-					cp->clip_render(ctx);
-					cairo_clip(ctx.cairo());
-				} else {
-					std::cerr << "WARNING: Couldn't find specified 'clip-path' element '" << clip_path_id() << "'" << std::endl;
-				}
-			}
-
-			for(auto s : shape_) {
-				s->cairo_render(ctx);
-			}
-			cairo_pop_group_to_source(ctx.cairo());
-			cairo_paint_with_alpha(ctx.cairo(), ctx.opacity_top());
-		}
-
-		const_shape_ptr group::handle_find_child_id(const std::string& id) const
-		{
-			for(auto& d : defs_) {
-				if(d->id() == id) {
-					return d;
-				}
-				auto sp = d->find_child_id(id);
-				if(sp) {
-					return sp;
-				}
-			}
-			for(auto& s : shape_) {
-				if(s->id() == id) {
-					return s;
-				}
-				auto sp = s->find_child_id(id);
-				if(sp) {
-					return sp;
-				}
-			}
-			for(auto& cp : clip_path_) {
-				if(cp->id() == id) {
-					return cp;
-				}
-				auto sp = cp->find_child_id(id);
-				if(sp) {
-					return sp;
-				}
-			}
-			for(auto& grad : gradient_list_) {
-				if(grad->id() == id) {
-					return grad;
-				}
-				auto gr = grad->find_child_id(id);
-				if(gr) {
-					return gr;
-				}
-			}
-			return shape_ptr();
-		}
-
-
 		line::line(element* doc, const ptree& pt)
 			: shape(doc, pt),
 			x1_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
@@ -495,7 +330,7 @@ namespace KRE
 			x2_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
 			y2_(0, svg_length::SVG_LENGTHTYPE_NUMBER)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
             auto x1 = attributes.get_child_optional("x1");
 			if(x1) {
 				x1_ = svg_length(x1->data());
@@ -532,6 +367,7 @@ namespace KRE
 		polyline::polyline(element* doc, const ptree& pt)
 			: shape(doc,pt)
 		{
+			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
             auto points = attributes.get_child_optional("points");
 			if(points) {
 				points_ = create_point_list(points->data());

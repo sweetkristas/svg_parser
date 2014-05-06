@@ -57,11 +57,6 @@ namespace KRE
 		public:
 			svg(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~svg();
-
-			double x() { return x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
-			double y() { return y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
-			double width() { return width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
-			double height() { return height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER); };
 		private:
 			virtual void handle_render(render_context& ctx) const override;
 
@@ -70,11 +65,6 @@ namespace KRE
 			std::string content_script_type_;
 			std::string content_style_type_;
 			std::string xmlns_;
-			view_box_rect view_box_;
-			svg_length x_;
-			svg_length y_;
-			svg_length width_;
-			svg_length height_;
 			//PreserveAspectRatio preserve_aspect_ratio_;
 			ZoomAndPan zoom_and_pan_;
 		};
@@ -94,6 +84,15 @@ namespace KRE
 		public:
 			group(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~group();
+		private:
+			virtual void handle_render(render_context& ctx) const override;
+		};
+
+		class clip_path : public container
+		{
+		public:
+			clip_path(element* parent, const boost::property_tree::ptree& pt);
+			virtual ~clip_path();
 		private:
 			virtual void handle_render(render_context& ctx) const override;
 		};

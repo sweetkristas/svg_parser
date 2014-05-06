@@ -11,7 +11,7 @@
 
 	   1. The origin of this software must not be misrepresented; you must not
 	   claim that you wrote the original software. If you use this software
-	   in a product, an acknowledgment in the product documentation would be
+	   in a product, an acknowledgement in the product documentation would be
 	   appreciated but is not required.
 
 	   2. Altered source versions must be plainly marked as such, and must not be
@@ -24,49 +24,35 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <string>
-
-#include "svg_element.hpp"
-#include "color.hpp"
-#include "uri.hpp"
 
 namespace KRE
 {
-	class paint;
-	typedef std::shared_ptr<paint> paint_ptr;
-
-	enum class ColorAttrib {
-		INHERIT,
-		NONE,
-		CURRENT_COLOR,
-		VALUE,
-		FUNC_IRI,
-		ICC_COLOR,
-	};
-
-	class paint
+	class color
 	{
 	public:
-		paint();
-		explicit paint(int r, int g, int b, int a=255);
+		color();
+		~color();
+		explicit color(const double r, const double g, const double b, const double a=1.0);
+		explicit color(const int r, const int g, const int b, const int a=255);
+		//explicit color(const variant& node);
 
-		virtual ~paint();
+		double r() const { return color_[0]; }
+		double g() const { return color_[1]; }
+		double b() const { return color_[2]; }
+		double a() const { return color_[3]; }
 
-		//void apply(element* doc, render_context& ctx) const;
+		double red() const { return color_[0]; }
+		double green() const { return color_[1]; }
+		double blue() const { return color_[2]; }
+		double alpha() const { return color_[3]; }
+		
+		const float* as_floatv() const {
+			return color_;
+		}
 
-		static paint_ptr from_string(const std::string& s);
+		static color from_name(const std::string& name);
 	private:
-		explicit paint(const std::string& s);
-
-		ColorAttrib color_attrib_;
-		color color_value_;
-		uri::uri color_ref_;
-
-		std::string icc_color_name_;
-		std::vector<double> icc_color_values_;
-
-		ColorAttrib backup_color_attrib_;
-		color backup_color_value_;
+		float color_[4];
 	};
 }

@@ -24,9 +24,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 #include <vector>
+
 #include "svg_fwd.hpp"
 #include "svg_length.hpp"
 #include "svg_paint.hpp"
+#include "uri.hpp"
 
 namespace KRE
 {
@@ -292,14 +294,6 @@ namespace KRE
 			COLLAPSE,
 		};
 
-		enum class ColorAttrib {
-			INHERIT,
-			NONE,
-			CURRENT_COLOR,
-			VALUE,
-			//ICC_COLOR,
-		};
-
 		class visual_attribs
 		{
 		public:
@@ -318,8 +312,7 @@ namespace KRE
 			Cursor cursor_;
 			Display display_;
 			Visibility visibility_;
-			ColorAttrib current_color_;
-			paint current_color_value_;
+			paint_ptr current_color_;
 		};
 
 		enum class FuncIriValue {
@@ -334,7 +327,7 @@ namespace KRE
 			EVEN_ODD,
 		};
 
-		enum class Opacity {
+		enum class OpacityAttrib {
 			INHERIT,
 			VALUE,
 		};
@@ -350,7 +343,7 @@ namespace KRE
 			ClipRule rule_;
 			FuncIriValue mask_;
 			std::string mask_ref_;
-			Opacity opacity_;
+			OpacityAttrib opacity_;
 			double opacity_value_;
 		};
 
@@ -373,12 +366,11 @@ namespace KRE
 			svg_length w_;
 			svg_length h_;
 			FuncIriValue filter_;
-			ColorAttrib flood_color_;
-			paint flood_color_value_;
-			Opacity flood_opacity_;
+			uri::uri filter_ref_;
+			paint_ptr flood_color_;
+			OpacityAttrib flood_opacity_;
 			double flood_opacity_value_;
-			ColorAttrib lighting_color_;
-			paint lighting_color_value_;
+			paint_ptr lighting_color_;
 		};
 
 		enum class FillRuleAttrib {
@@ -397,10 +389,6 @@ namespace KRE
 			BUTT,
 			ROUND,
 			SQUARE,
-		};
-		enum class OpacityAttrib {
-			INHERIT,
-			VALUE,
 		};
 
 		enum class StrokeWidthAttrib {
@@ -422,7 +410,6 @@ namespace KRE
 
 		enum class DashOffsetAttrib {
 			INHERIT,
-			PERCENTAGE,
 			VALUE,
 		};
 
@@ -471,8 +458,7 @@ namespace KRE
 			virtual ~painting_properties();
 		private:
 			// default none
-			ColorAttrib stroke_;
-			paint stroke_value_;
+			paint_ptr stroke_;
 			OpacityAttrib stroke_opacity_;
 			double stroke_opacity_value_;
 			// default 1
@@ -487,13 +473,12 @@ namespace KRE
 			double stroke_miter_limit_value_;
 			// default none
 			DashArrayAttrib stroke_dash_array_;
-			point_list stroke_dash_array_value_;
+			std::vector<svg_length> stroke_dash_array_value_;
 			// default 0
 			DashOffsetAttrib stroke_dash_offset_;
-			double stroke_dash_offset_value_;
+			svg_length stroke_dash_offset_value_;
 			// default black
-			ColorAttrib fill_;
-			paint fill_value_;
+			paint_ptr fill_;
 			// defualt even-odd
 			FillRuleAttrib fill_rule_;
 			// default 1.0

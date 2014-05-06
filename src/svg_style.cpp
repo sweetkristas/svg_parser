@@ -458,7 +458,7 @@ namespace KRE
 			clip_(Clip::AUTO),
 			display_(Display::INLINE),
 			visibility_(Visibility::VISIBLE),
-			current_color_value_(0,0,0),
+			current_color_(new paint(0,0,0)),
 			cursor_(Cursor::AUTO)
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
@@ -629,13 +629,7 @@ namespace KRE
 
 			auto color = attributes.get_child_optional("color");
 			if(color) {
-				const std::string& c = color->data();
-				if(c == "inherit") {
-					current_color_ = ColorAttrib::INHERIT;
-				} else {
-					current_color_ = ColorAttrib::VALUE;
-					current_color_value_ = paint(c);
-				}
+				current_color_ = paint::from_string(color->data());
 			}
 		}
 
@@ -647,7 +641,7 @@ namespace KRE
 			: path_(FuncIriValue::NONE),
 			rule_(ClipRule::NON_ZERO),
 			mask_(FuncIriValue::NONE),
-			opacity_(Opacity::VALUE),
+			opacity_(OpacityAttrib::VALUE),
 			opacity_value_(1.0)
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
@@ -698,9 +692,9 @@ namespace KRE
 			if(opacity) {
 				const std::string& o = opacity->data();
 				if(o == "inherit") {
-					opacity_ = Opacity::INHERIT;
+					opacity_ = OpacityAttrib::INHERIT;
 				} else {
-					opacity_ = Opacity::VALUE;
+					opacity_ = OpacityAttrib::VALUE;
 					try {
 						opacity_value_ = boost::lexical_cast<double>(o);
 					} catch(boost::bad_lexical_cast&) {
@@ -717,14 +711,83 @@ namespace KRE
 		filter_effect_attribs::filter_effect_attribs(const ptree& pt)
 			: enable_background_(Background::ACCUMULATE),
 			filter_(FuncIriValue::NONE),
-			flood_color_(ColorAttrib::VALUE),
-			flood_color_value_(0,0,0),
-			flood_opacity_(Opacity::VALUE),
+			flood_color_(new paint(0,0,0)),
+			flood_opacity_(OpacityAttrib::VALUE),
 			flood_opacity_value_(1.0),
-			lighting_color_(ColorAttrib::VALUE),
-			lighting_color_value_("white")
+			lighting_color_(new paint(255,255,255))
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+
+			auto filter = attributes.get_child_optional("filter");
+			if(filter) {
+				const std::string& filt = filter->data();
+				if(filt == "inherit") {
+					filter_ = FuncIriValue::INHERIT;
+				} else if(filt == "none") {
+					filter_ = FuncIriValue::NONE;
+				} else {
+					filter_ = FuncIriValue::FUNC_IRI;
+					if(filt.substr(0,4) == "url(" && filt.back() == ')') {
+						filter_ref_ = uri::uri::parse(filt.substr(4, filt.size()-5));
+					}
+				}
+			}
+
+			auto enable_background = attributes.get_child_optional("enable-background");
+			if(enable_background) {
+				const std::string& bckg = enable_background->data();
+				if(bckg == "inherit") {
+					enable_background_ = Background::INHERIT;
+				} else if(bckg == "accumulate") {
+					enable_background_ = Background::ACCUMULATE;
+				} else {
+					boost::char_separator<char> seperators(" \n\t\r,");
+					boost::tokenizer<boost::char_separator<char>> tok(bckg, seperators);
+					auto it = tok.begin();
+					ASSERT_LOG(*it == "new", "'enable-background' attribute expected new keyword.");
+					enable_background_ = Background::NEW;
+					++it;
+					if(it != tok.end()) {
+						x_ = svg_length(*it);
+						++it;
+						// technically if less than 4 values are given it should disable pocessing.
+						// I feel throwing an error is better.
+						ASSERT_LOG(it != tok.end(), "Expected 'enable-background' with 4 parameters for 'new' value, got 1");
+						y_ = svg_length(*it);
+						++it;
+						ASSERT_LOG(it != tok.end(), "Expected 'enable-background' with 4 parameters for 'new' value, got 2");
+						w_ = svg_length(*it);
+						++it;
+						ASSERT_LOG(it != tok.end(), "Expected 'enable-background' with 4 parameters for 'new' value, got 3");
+						h_ = svg_length(*it);
+					}
+				}
+			}
+
+			auto flood_color = attributes.get_child_optional("flood-color");
+			if(flood_color) {
+				flood_color_ = paint::from_string(flood_color->data());
+			}
+
+			auto opacity = attributes.get_child_optional("flood-opacity");
+			if(opacity) {
+				const std::string& o = opacity->data();
+				if(o == "inherit") {
+					flood_opacity_ = OpacityAttrib::INHERIT;
+				} else {
+					flood_opacity_ = OpacityAttrib::VALUE;
+					try {
+						flood_opacity_value_ = boost::lexical_cast<double>(o);
+					} catch(boost::bad_lexical_cast&) {
+						ASSERT_LOG(false, "Unable to obtain flood_opacity value: " << o);
+					}
+				}
+			}
+
+			auto lighting_color = attributes.get_child_optional("lighting-color");
+			if(lighting_color) {
+				lighting_color_ = paint::from_string(lighting_color->data());
+			}
 		}
 
 		filter_effect_attribs::~filter_effect_attribs()
@@ -732,8 +795,7 @@ namespace KRE
 		}
 
 		painting_properties::painting_properties(const ptree& pt)
-			: stroke_(ColorAttrib::NONE),
-			stroke_value_(0,0,0),
+			: stroke_(paint_ptr(new paint())),
 			stroke_opacity_(OpacityAttrib::VALUE),
 			stroke_opacity_value_(1.0),
 			stroke_width_(StrokeWidthAttrib::VALUE),
@@ -745,8 +807,7 @@ namespace KRE
 			stroke_dash_array_(DashArrayAttrib::NONE),
 			stroke_dash_offset_(DashOffsetAttrib::VALUE),
 			stroke_dash_offset_value_(0),
-			fill_(ColorAttrib::VALUE),
-			fill_value_(0,0,0),
+			fill_(paint_ptr(new paint(0,0,0))),
 			fill_rule_(FillRuleAttrib::EVENODD),
 			fill_opacity_(OpacityAttrib::VALUE),
 			fill_opacity_value_(1.0),
@@ -759,6 +820,257 @@ namespace KRE
 			color_profile_(ColorProfileAttrib::AUTO)
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+
+			auto stroke = attributes.get_child_optional("stroke");
+			if(stroke) {
+				stroke_ = paint::from_string(stroke->data());
+			}
+
+			auto stroke_opacity = attributes.get_child_optional("stroke-opacity");
+			if(stroke_opacity) {
+				const std::string& o = stroke_opacity->data();
+				if(o == "inherit") {
+					stroke_opacity_ = OpacityAttrib::INHERIT;
+				} else {
+					stroke_opacity_ = OpacityAttrib::VALUE;
+					try {
+						stroke_opacity_value_ = boost::lexical_cast<double>(o);
+					} catch(boost::bad_lexical_cast&) {
+						ASSERT_LOG(false, "Unable to obtain stroke-opacity value: " << o);
+					}
+				}
+			}
+
+			auto stroke_width = attributes.get_child_optional("stroke-width");
+			if(stroke_width) {
+				const std::string& sw = stroke_width->data();
+				if(sw == "inherit") {
+					stroke_width_ = StrokeWidthAttrib::INHERIT;
+				} else {
+					if(sw.find("%") != std::string::npos) {
+						stroke_width_ = StrokeWidthAttrib::PERCENTAGE;
+						try {
+							stroke_width_value_ = boost::lexical_cast<double>(sw) / 100.0;
+						} catch(boost::bad_lexical_cast&) {
+							ASSERT_LOG(false, "Unable to obtain 'stroke-width' value: " << sw);
+						}
+					} else {
+						stroke_width_ = StrokeWidthAttrib::VALUE;
+						try {
+							stroke_width_value_ = boost::lexical_cast<double>(sw);
+						} catch(boost::bad_lexical_cast&) {
+							ASSERT_LOG(false, "Unable to obtain 'stroke-width' value: " << sw);
+						}
+					}
+				}
+			}
+
+			auto stroke_linecap = attributes.get_child_optional("stroke-linecap");
+			if(stroke_linecap) {
+				const std::string& slc = stroke_linecap->data();
+				if(slc == "inherit") {
+					stroke_linecap_ = LineCapAttrib::INHERIT;
+				} else if(slc == "butt") {
+					stroke_linecap_ = LineCapAttrib::BUTT;
+				} else if(slc == "round") {
+					stroke_linecap_ = LineCapAttrib::ROUND;
+				} else if(slc == "square") {
+					stroke_linecap_ = LineCapAttrib::SQUARE;
+				}
+			}
+
+			auto stroke_linejoin = attributes.get_child_optional("stroke-linejoin");
+			if(stroke_linejoin) {
+				const std::string& slj = stroke_linejoin->data();
+				if(slj == "inherit") {
+					stroke_linejoin_ = LineJoinAttrib::INHERIT;
+				} else if(slj == "miter") {
+					stroke_linejoin_ = LineJoinAttrib::MITER;
+				} else if(slj == "round") {
+					stroke_linejoin_ = LineJoinAttrib::ROUND;
+				} else if(slj == "bevel") {
+					stroke_linejoin_ = LineJoinAttrib::BEVEL;
+				}
+			}
+
+			auto stroke_miterlimit = attributes.get_child_optional("stroke-miterlimit");
+			if(stroke_miterlimit) {
+				const std::string& sml = stroke_miterlimit->data();
+				if(sml == "inherit") {
+					stroke_miter_limit_ = MiterLimitAttrib::INHERIT;
+				} else {
+					stroke_miter_limit_ = MiterLimitAttrib::VALUE;
+					try {
+						stroke_miter_limit_value_ = boost::lexical_cast<double>(sml);
+					} catch(boost::bad_lexical_cast&) {
+						ASSERT_LOG(false, "Unable to obtain 'stroke-miterlimit' value: " << sml);
+					}
+					ASSERT_LOG(stroke_miter_limit_value_ >= 1.0, "'stroke-miterlimit' value must be greater than 1.0: " << stroke_miter_limit_value_);
+				}
+			}
+
+			auto stroke_dasharray = attributes.get_child_optional("stroke-dasharray");
+			if(stroke_dasharray) {
+				const std::string& sda = stroke_dasharray->data();
+				if(sda == "inherit") {
+					stroke_dash_array_ = DashArrayAttrib::INHERIT;
+				} else if(sda == "none") {
+					stroke_dash_array_ = DashArrayAttrib::NONE;
+				} else {
+					stroke_dash_array_ = DashArrayAttrib::VALUE;
+					//stroke_dash_array_value_;
+					boost::char_separator<char> seperators(" \n\t\r,");
+					boost::tokenizer<boost::char_separator<char>> tok(sda, seperators);
+					for(auto it : tok) {
+						stroke_dash_array_value_.emplace_back(svg_length(it));
+					}
+				}
+			}
+
+			auto stroke_dash_offset = attributes.get_child_optional("stroke-dashoffset");
+			if(stroke_dash_offset) {
+				const std::string& sdo = stroke_dash_offset->data();
+				if(sdo == "inherit") {
+					stroke_dash_offset_ = DashOffsetAttrib::INHERIT;
+				} else {
+					stroke_dash_offset_ = DashOffsetAttrib::VALUE;
+					stroke_dash_offset_value_ = svg_length(sdo);
+				}
+			}
+
+			auto fill = attributes.get_child_optional("fill");
+			if(fill) {
+				fill_ = paint::from_string(fill->data());
+			}
+
+			auto fill_opacity = attributes.get_child_optional("fill-opacity");
+			if(fill_opacity) {
+				const std::string& o = fill_opacity->data();
+				if(o == "inherit") {
+					fill_opacity_ = OpacityAttrib::INHERIT;
+				} else {
+					fill_opacity_ = OpacityAttrib::VALUE;
+					try {
+						fill_opacity_value_ = boost::lexical_cast<double>(o);
+					} catch(boost::bad_lexical_cast&) {
+						ASSERT_LOG(false, "Unable to obtain fill-opacity value: " << o);
+					}
+				}
+			}
+
+			auto fill_rule = attributes.get_child_optional("fill-rule");
+			if(fill_rule) {
+				const std::string& fr = fill_rule->data();
+				if(fr == "inherit") {
+					fill_rule_ = FillRuleAttrib::INHERIT;
+				} else if(fr == "nonzero") {
+					fill_rule_ = FillRuleAttrib::NONZERO;
+				} else if(fr == "evenodd") {
+					fill_rule_ = FillRuleAttrib::EVENODD;
+				}
+			}
+
+			auto color_interpolation = attributes.get_child_optional("color-interpolation");
+			if(color_interpolation) {
+				const std::string& ci = color_interpolation->data();
+				if(ci == "auto") {
+					color_interpolation_ = ColorInterpolationAttrib::AUTO;
+				} else if(ci == "sRGBA") {
+					color_interpolation_ = ColorInterpolationAttrib::sRGBA;
+				} else if(ci == "linearRGBA") {
+					color_interpolation_ = ColorInterpolationAttrib::linearRGBA;
+				} else if(ci == "inherit") {
+					color_interpolation_ = ColorInterpolationAttrib::INHERIT;
+				}
+			}
+
+			auto color_interpolation_filters = attributes.get_child_optional("color-interpolation-filters");
+			if(color_interpolation_filters) {
+				const std::string& cif = color_interpolation_filters->data();
+				if(cif == "auto") {
+					color_interpolation_filters_ = ColorInterpolationAttrib::AUTO;
+				} else if(cif == "sRGBA") {
+					color_interpolation_filters_ = ColorInterpolationAttrib::sRGBA;
+				} else if(cif == "linearRGBA") {
+					color_interpolation_filters_ = ColorInterpolationAttrib::linearRGBA;
+				} else if(cif == "inherit") {
+					color_interpolation_filters_ = ColorInterpolationAttrib::INHERIT;
+				}
+			}
+
+			auto color_rendering = attributes.get_child_optional("color-rendering");
+			if(color_rendering) {
+				const std::string& rend = color_rendering->data();
+				if(rend == "inherit") {
+					color_rendering_ = RenderingAttrib::INHERIT;
+				} else if(rend == "auto") {
+					color_rendering_ = RenderingAttrib::AUTO;
+				} else if(rend == "optimizeSpeed") {
+					color_rendering_ = RenderingAttrib::OPTIMIZE_SPEED;
+				} else if(rend == "optimizeQuality") {
+					color_rendering_ = RenderingAttrib::OPTIMIZE_QUALITY;
+				}
+			}
+
+			auto shape_rendering = attributes.get_child_optional("shape-rendering");
+			if(shape_rendering) {
+				const std::string& rend = shape_rendering->data();
+				if(rend == "inherit") {
+					shape_rendering_ = ShapeRenderingAttrib::INHERIT;
+				} else if(rend == "auto") {
+					shape_rendering_ = ShapeRenderingAttrib::AUTO;
+				} else if(rend == "optimizeSpeed") {
+					shape_rendering_ = ShapeRenderingAttrib::OPTIMIZE_SPEED;
+				} else if(rend == "crispEdges") {
+					shape_rendering_ = ShapeRenderingAttrib::CRISP_EDGES;
+				} else if(rend == "geometricPrecision") {
+					shape_rendering_ = ShapeRenderingAttrib::GEOMETRIC_PRECISION;
+				}
+			}
+
+			auto text_rendering = attributes.get_child_optional("text-rendering");
+			if(text_rendering) {
+				const std::string& rend = text_rendering->data();
+				if(rend == "inherit") {
+					text_rendering_ = TextRenderingAttrib::INHERIT;
+				} else if(rend == "auto") {
+					text_rendering_ = TextRenderingAttrib::AUTO;
+				} else if(rend == "optimizeSpeed") {
+					text_rendering_ = TextRenderingAttrib::OPTIMIZE_SPEED;
+				} else if(rend == "optimizeLegibility") {
+					text_rendering_ = TextRenderingAttrib::OPTIMIZE_LEGIBILITY;
+				} else if(rend == "geometricPrecision") {
+					text_rendering_ = TextRenderingAttrib::GEOMETRIC_PRECISION;
+				}
+			}
+
+			auto image_rendering = attributes.get_child_optional("image-rendering");
+			if(image_rendering) {
+				const std::string& rend = image_rendering->data();
+				if(rend == "inherit") {
+					image_rendering_ = RenderingAttrib::INHERIT;
+				} else if(rend == "auto") {
+					image_rendering_ = RenderingAttrib::AUTO;
+				} else if(rend == "optimizeSpeed") {
+					image_rendering_ = RenderingAttrib::OPTIMIZE_SPEED;
+				} else if(rend == "optimizeQuality") {
+					image_rendering_ = RenderingAttrib::OPTIMIZE_QUALITY;
+				}
+			}
+
+			auto color_profile = attributes.get_child_optional("color-profile");
+			if(color_profile) {
+				const std::string& cp = color_profile->data();
+				if(cp == "inherit") {
+					color_profile_ = ColorProfileAttrib::INHERIT;
+				} else if(cp == "auto") {
+					color_profile_ = ColorProfileAttrib::AUTO;
+				} else if(cp == "sRGBA") {
+					color_profile_ = ColorProfileAttrib::sRGB;
+				} else {
+					std::cerr << "XXX: unhandled 'color-profile' attribute value: " << cp << std::endl;
+				}
+			}
 		}
 
 		painting_properties::~painting_properties()
