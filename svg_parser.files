@@ -1,4 +1,6 @@
 src/asserts.hpp
+src/color.cpp
+src/color.hpp
 src/filesystem.cpp
 src/filesystem.hpp
 src/formatter.hpp

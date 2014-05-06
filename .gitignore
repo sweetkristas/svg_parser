@@ -23,6 +23,9 @@
 *.out
 *.app
 
+# vi swap files
+*.swp
+
 # msvc files we definitely do not want
 *.sdf
 *.tlog
