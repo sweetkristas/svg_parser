@@ -31,23 +31,25 @@ namespace KRE
 
 		core_attribs::core_attribs(const ptree& pt)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+			auto attributes = pt.get_child_optional("<xmlattr>");
 
-			auto id = attributes.get_child_optional("id");
-			if(id) {
-				id_ = id->data();
-			}
-			auto xml_base = attributes.get_child_optional("xml:base");
-			if(xml_base) {
-				xml_base_ = xml_base->data();
-			}
-			auto xml_lang = attributes.get_child_optional("xml:lang");
-			if(xml_lang) {
-				xml_lang_ = xml_lang->data();
-			}
-			auto xml_space = attributes.get_child_optional("xml:space");
-			if(xml_space) {
-				xml_space_ = xml_space->data();
+			if(attributes) {
+				auto id = attributes->get_child_optional("id");
+				if(id) {
+					id_ = id->data();
+				}
+				auto xml_base = attributes->get_child_optional("xml:base");
+				if(xml_base) {
+					xml_base_ = xml_base->data();
+				}
+				auto xml_lang = attributes->get_child_optional("xml:lang");
+				if(xml_lang) {
+					xml_lang_ = xml_lang->data();
+				}
+				auto xml_space = attributes->get_child_optional("xml:space");
+				if(xml_space) {
+					xml_space_ = xml_space->data();
+				}
 			}
 		}
 

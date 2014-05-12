@@ -59,7 +59,9 @@ namespace KRE
 
 			void apply_transforms(render_context& ctx) const;
 
-			element_ptr find_child(const std::string& id) const;
+			element_ptr find_child(const std::string& id) const {
+				return handle_find_child(id);
+			}
 
 			const svg_length& x() const { return x_; }
 			const svg_length& y() const { return y_; }
@@ -69,6 +71,8 @@ namespace KRE
 			static element_ptr factory(element* parent, const boost::property_tree::ptree& svg_data);
 		private:
 			virtual void handle_render(render_context& ctx) const = 0;
+			virtual element_ptr handle_find_child(const std::string& id) const { return element_ptr(); }
+
 
 			// top level parent element. if NULL then this is the top level element.
 			element* parent_;

@@ -44,10 +44,10 @@ namespace KRE
 		public:
 			container(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~container();
-
-			const_shapes_ptr find_child_id(const std::string& id) const;
 		private:
 			virtual void handle_render(render_context& ctx) const override;
+			element_ptr handle_find_child(const std::string& id) const override;
+
 			// Shape/Structural/Gradient elements
 			std::vector<element_ptr> elements_;
 		};

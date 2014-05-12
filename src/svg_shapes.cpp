@@ -63,7 +63,7 @@ namespace KRE
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
 				auto dpath = attributes->get_child_optional("d");
-				if(dpath && !dpath->data.empty()) {
+				if(dpath && !dpath->data().empty()) {
 					path_ = parse_path(dpath->data());
 				}
 			}
@@ -309,7 +309,7 @@ namespace KRE
 		void text::handle_render(render_context& ctx) const 
 		{
 			/// need parent value.
-			double letter_spacing = GetFontProperties().get_letter_spacing(0);
+			/*double letter_spacing = GetFontProperties().get_letter_spacing(0);
 			if(letter_spacing > 0) {
 				for(auto c : text_) {
 					const char s[2] = {c,0};
@@ -318,7 +318,8 @@ namespace KRE
 				}
 			} else {
 				cairo_show_text(ctx.cairo(), text_.c_str());
-			}
+			}*/
+			ASSERT_LOG(false, "XXX: fixme text::handle_render");
 
 			shape::render(ctx);
 		}

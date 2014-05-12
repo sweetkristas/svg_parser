@@ -49,19 +49,22 @@ namespace KRE
 
 	paint::paint()
 		: color_attrib_(ColorAttrib::NONE),
-		backup_color_attrib_(ColorAttrib::NONE)
+		backup_color_attrib_(ColorAttrib::NONE),
+		opacity_(1.0)
 	{
 	}
 
 	paint::paint(int r, int g, int b, int a)
 		: color_attrib_(ColorAttrib::VALUE),
-		backup_color_attrib_(ColorAttrib::NONE)
+		backup_color_attrib_(ColorAttrib::NONE),
+		opacity_(1.0)
 	{
 	}
 
 	paint::paint(const std::string& s)
 		: color_attrib_(ColorAttrib::VALUE),
-		backup_color_attrib_(ColorAttrib::NONE)
+		backup_color_attrib_(ColorAttrib::NONE),
+		opacity_(1.0)
 	{
 		if(s == "none") {
 			color_attrib_ = ColorAttrib::NONE;
@@ -103,8 +106,8 @@ namespace KRE
 			}
 			color_value_ = color(cv[0],cv[1],cv[2]);
 		} else if(s.length() > 4 && s.substr(0, 4) == "url(") {
-			auto st_it = std::find(s.begin(), s.end(), "(");
-			auto ed_it = std::find(s.begin(), s.end(), ")");
+			auto st_it = std::find(s.begin(), s.end(), '(');
+			auto ed_it = std::find(s.begin(), s.end(), '0');
 			color_ref_ = uri::uri::parse(std::string(st_it, ed_it));
 			color_attrib_ = ColorAttrib::FUNC_IRI;
 

@@ -41,48 +41,50 @@ namespace KRE
 			height_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE),
 			view_box_(0.0,0.0,512.0,512.0)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-            auto exts = attributes.get_child_optional("externalResourcesRequired");
-            if(exts) {
-                const std::string& s = exts->data();
-                if(s == "true") {
-                    external_resources_required_ = true;
-                } else if(s == "false") {
-                    external_resources_required_ = false;
-                } else {
-                    ASSERT_LOG(false, "Unrecognised value in 'externalResourcesRequired' attribute: " << s);
-                }
-            }
-            ASSERT_LOG(!external_resources_required_, "We don't support getting external resources.");
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto exts = attributes->get_child_optional("externalResourcesRequired");
+				if(exts) {
+					const std::string& s = exts->data();
+					if(s == "true") {
+						external_resources_required_ = true;
+					} else if(s == "false") {
+						external_resources_required_ = false;
+					} else {
+						ASSERT_LOG(false, "Unrecognised value in 'externalResourcesRequired' attribute: " << s);
+					}
+				}
+				ASSERT_LOG(!external_resources_required_, "We don't support getting external resources.");
 
-			auto xattr = attributes.get_child_optional("x");
-			if(xattr) {
-				x_ = svg_length(xattr->data());
-			}
-			auto yattr = attributes.get_child_optional("y");
-			if(yattr) {
-				y_ = svg_length(yattr->data());
-			}
-			auto wattr = attributes.get_child_optional("width");
-			if(wattr) {
-				width_ = svg_length(wattr->data());
-			}
-			auto hattr = attributes.get_child_optional("height");
-			if(hattr) {
-				height_ = svg_length(hattr->data());
-			}
-			auto trfs = attributes.get_child_optional("transform");
-			if(trfs) {
-				transforms_ = transform::factory(trfs->data());
-			}
-			auto vbox = attributes.get_child_optional("viewBox");
-			if(vbox) {
-				std::vector<std::string> buf = geometry::split(vbox->data(), ",| |;");
-				ASSERT_LOG(buf.size() == 4, "viewBox should have four elements.");
-				view_box_ = view_box_rect(boost::lexical_cast<double>(buf[0]),
-					boost::lexical_cast<double>(buf[1]),
-					boost::lexical_cast<double>(buf[2]),
-					boost::lexical_cast<double>(buf[3]));
+				auto xattr = attributes->get_child_optional("x");
+				if(xattr) {
+					x_ = svg_length(xattr->data());
+				}
+				auto yattr = attributes->get_child_optional("y");
+				if(yattr) {
+					y_ = svg_length(yattr->data());
+				}
+				auto wattr = attributes->get_child_optional("width");
+				if(wattr) {
+					width_ = svg_length(wattr->data());
+				}
+				auto hattr = attributes->get_child_optional("height");
+				if(hattr) {
+					height_ = svg_length(hattr->data());
+				}
+				auto trfs = attributes->get_child_optional("transform");
+				if(trfs) {
+					transforms_ = transform::factory(trfs->data());
+				}
+				auto vbox = attributes->get_child_optional("viewBox");
+				if(vbox) {
+					std::vector<std::string> buf = geometry::split(vbox->data(), ",| |;");
+					ASSERT_LOG(buf.size() == 4, "viewBox should have four elements.");
+					view_box_ = view_box_rect(boost::lexical_cast<double>(buf[0]),
+						boost::lexical_cast<double>(buf[1]),
+						boost::lexical_cast<double>(buf[2]),
+						boost::lexical_cast<double>(buf[3]));
+				}
 			}
 		}
 
@@ -106,7 +108,7 @@ namespace KRE
             }
         }
 
-		element_ptr factory(element* parent, const ptree& pt)
+		element_ptr element::factory(element* parent, const ptree& pt)
 		{
 			for(auto& v : pt) {
 				if(v.first == "svg") {

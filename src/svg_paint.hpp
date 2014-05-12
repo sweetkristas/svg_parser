@@ -27,12 +27,13 @@
 #include <memory>
 #include <string>
 
-#include "svg_element.hpp"
 #include "color.hpp"
 #include "uri.hpp"
 
 namespace KRE
 {
+	class svg_element;
+
 	class paint;
 	typedef std::shared_ptr<paint> paint_ptr;
 
@@ -53,6 +54,8 @@ namespace KRE
 
 		virtual ~paint();
 
+		void set_opacity(double o) { opacity_ = o; }
+
 		//void apply(element* doc, render_context& ctx) const;
 
 		static paint_ptr from_string(const std::string& s);
@@ -68,5 +71,7 @@ namespace KRE
 
 		ColorAttrib backup_color_attrib_;
 		color backup_color_value_;
+
+		double opacity_;
 	};
 }

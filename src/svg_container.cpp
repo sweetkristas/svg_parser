@@ -104,45 +104,61 @@ namespace KRE
 			*/
 		}
 
+		element_ptr container::handle_find_child(const std::string& id) const
+		{
+			for(auto e : elements_) {
+				if(e->id() == id) {
+					return e;
+				}
+				auto child = e->find_child(id);
+				if(child) {
+					return child;
+				}
+			}
+			return element_ptr();
+		}
+
 		svg::svg(element* parent, const ptree& pt)
 			: container(parent, pt)
 		{
-			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
+			auto attributes = pt.get_child_optional("<xmlattr>");
 
-			auto version = attributes.get_child_optional("version");
-			if(version) {
-				version_ = version->data();
+			if(attributes) {
+				auto version = attributes->get_child_optional("version");
+				if(version) {
+					version_ = version->data();
+				}
+
+				auto base_profile = attributes->get_child_optional("baseProfile");
+				if(base_profile) {
+					base_profile_ = base_profile->data();
+				}
+
+				auto content_script_type = attributes->get_child_optional("contentScriptType");
+				if(content_script_type) {
+					content_script_type_ = content_script_type->data();
+				}
+
+				auto content_style_type = attributes->get_child_optional("contentStyleType");
+				if(content_style_type) {
+					content_style_type_ = content_style_type->data();
+				}
+
+				auto xml_ns = attributes->get_child_optional("xml:ns");
+				if(xml_ns) {
+					xmlns_ = xml_ns->data();
+				}
+
+				// todo: zoom_and_pan_
+				// todo: preserve_aspect_ratio_
+
+				/*
+				auto version = attributes->get_child_optional("version");
+				if(version) {
+					version_ = version->data();
+				}
+				*/
 			}
-
-			auto base_profile = attributes.get_child_optional("baseProfile");
-			if(base_profile) {
-				base_profile_ = base_profile->data();
-			}
-
-			auto content_script_type = attributes.get_child_optional("contentScriptType");
-			if(content_script_type) {
-				content_script_type_ = content_script_type->data();
-			}
-
-			auto content_style_type = attributes.get_child_optional("contentStyleType");
-			if(content_style_type) {
-				content_style_type_ = content_style_type->data();
-			}
-
-			auto xml_ns = attributes.get_child_optional("xml:ns");
-			if(xml_ns) {
-				xmlns_ = xml_ns->data();
-			}
-
-			// todo: zoom_and_pan_
-			// todo: preserve_aspect_ratio_
-
-			/*
-			auto version = attributes.get_child_optional("version");
-			if(version) {
-				version_ = version->data();
-			}
-			*/
 		}
 
 		svg::~svg()

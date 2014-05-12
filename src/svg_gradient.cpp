@@ -54,7 +54,7 @@ namespace KRE
 			if(color) {
 				color_ = paint::from_string(color->data());
 				if(opacity) {
-					color_->set_alpha(opacity_);
+					color_->set_opacity(opacity_);
 				}
 			}
 
@@ -77,7 +77,7 @@ namespace KRE
 
 		void gradient_stop::apply(render_context& ctx, cairo_pattern_t* pattern)
 		{
-			double r, g, b;
+			/*double r, g, b;
 
 			// should this be fill or stroke? or specified by a currentColor.
 			double a = opacity_set_ ? opacity_ : ctx.fill_color_top().a();
@@ -93,6 +93,8 @@ namespace KRE
 			}
 
 			cairo_pattern_add_color_stop_rgba(pattern, offset_, r, g, b, a);
+			*/
+			ASSERT_LOG(false, "XXX: fixme gradient_stop::apply");
 		}
 
 		gradient::gradient(element* doc, const ptree& pt)
@@ -148,6 +150,10 @@ namespace KRE
 					ASSERT_LOG(false, "unexpected child element in gradient stop list: " << v.first);
 				}
 			}
+		}
+
+		gradient::~gradient()
+		{
 		}
 
 		void gradient::set_source(render_context& ctx) const
