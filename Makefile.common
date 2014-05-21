@@ -12,9 +12,7 @@ objects = \
 	src/svg_gradient.o \
 	src/svg_parse.o \
 	src/svg_shapes.o \
-	src/svg_styles.o \
 	src/utils.o \
-	src/geometry.o \
 	src/svg_attribs.o \
 	src/svg_element.o \
 	src/svg_paint.o \

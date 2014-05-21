@@ -35,6 +35,7 @@ reflected point (i.e., (newx1, newy1), the first control point of the current pa
 
 */
 
+#include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <list>

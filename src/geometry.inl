@@ -23,7 +23,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
-#include <regex>
+#include <boost/regex.hpp>
 #include "geometry.hpp"
 
 namespace geometry
@@ -32,8 +32,8 @@ namespace geometry
 	{
 		std::vector<std::string> split(const std::string& input, const std::string& re) {
 			// passing -1 as the submatch index parameter performs splitting
-			std::regex regex(re);
-			std::sregex_token_iterator first(input.begin(), input.end(), regex, -1), last;
+            boost::regex regex(re);
+            boost::sregex_token_iterator first(input.begin(), input.end(), regex, -1), last;
 			return std::vector<std::string>(first, last);
 		}	
 	}

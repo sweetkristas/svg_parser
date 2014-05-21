@@ -57,7 +57,7 @@ BASE_CXXFLAGS += -std=c++0x -g -rdynamic -fno-inline-functions \
 	-Wno-narrowing -Wno-literal-suffix
 
 # Compiler include options, used after CXXFLAGS and CPPFLAGS.
-INC := -Isrc -Iinclude $(shell pkg-config --cflags x11 sdl2 glew SDL2_image SDL2_ttf libpng zlib)
+INC := -Isrc -Iinclude $(shell pkg-config --cflags x11 sdl2 glew SDL2_image SDL2_ttf libpng zlib cairo)
 
 ifdef STEAM_RUNTIME_ROOT
 	INC += -I$(STEAM_RUNTIME_ROOT)/include
@@ -65,7 +65,7 @@ endif
 
 # Linker library options.
 LIBS := $(shell pkg-config --libs x11 gl ) \
-	$(shell pkg-config --libs sdl2 glew SDL2_image libpng zlib) -lSDL2_ttf -lSDL2_mixer
+	$(shell pkg-config --libs sdl2 glew SDL2_image libpng zlib cairo) -lSDL2_ttf -lSDL2_mixer
 
 include Makefile.common
 

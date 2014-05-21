@@ -24,6 +24,7 @@
 #include <boost/tokenizer.hpp>
 #include <sstream>
 
+#include <cfloat>
 #include <cmath>
 #include "asserts.hpp"
 #include "svg_transform.hpp"

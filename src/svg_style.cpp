@@ -31,38 +31,6 @@ namespace KRE
 	namespace SVG
 	{
 		using namespace boost::property_tree;
-		
-		// synonym for wider.
-		FontStretch operator++(FontStretch& f) {
-			switch(f) {
-			case FontStretch::ULTRA_CONDENSED:	f = FontStretch::EXTRA_CONDENSED; break;
-			case FontStretch::EXTRA_CONDENSED:	f = FontStretch::CONDENSED; break;
-			case FontStretch::CONDENSED:		f = FontStretch::SEMI_CONDENSED; break;
-			case FontStretch::SEMI_CONDENSED:	f = FontStretch::NORMAL; break;
-			case FontStretch::NORMAL:			f = FontStretch::SEMI_EXPANDED; break;
-			case FontStretch::SEMI_EXPANDED:	f = FontStretch::EXPANDED; break;
-			case FontStretch::EXPANDED:			f = FontStretch::EXTRA_EXPANDED; break;
-			case FontStretch::EXTRA_EXPANDED:	f = FontStretch::ULTRA_CONDENSED; break;
-			case FontStretch::ULTRA_EXPANDED:	break;
-			}
-			return f;
-		}
-
-		// synonym for narrower.
-		FontStretch operator--(FontStretch& f) {
-			switch(f) {
-			case FontStretch::ULTRA_CONDENSED:	break;
-			case FontStretch::EXTRA_CONDENSED:	f = FontStretch::ULTRA_CONDENSED; break;
-			case FontStretch::CONDENSED:		f = FontStretch::EXTRA_CONDENSED; break;
-			case FontStretch::SEMI_CONDENSED:	f = FontStretch::CONDENSED; break;
-			case FontStretch::NORMAL:			f = FontStretch::SEMI_CONDENSED; break;
-			case FontStretch::SEMI_EXPANDED:	f = FontStretch::NORMAL; break;
-			case FontStretch::EXPANDED:			f = FontStretch::SEMI_EXPANDED; break;
-			case FontStretch::EXTRA_EXPANDED:	f = FontStretch::EXPANDED; break;
-			case FontStretch::ULTRA_EXPANDED:	f = FontStretch::EXTRA_CONDENSED; break;
-			}
-			return f;
-		}
 
 		font_attribs::font_attribs(const ptree& pt)
 			: style_(FontStyle::NORMAL),
