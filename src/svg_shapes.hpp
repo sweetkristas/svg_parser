@@ -40,9 +40,10 @@ namespace KRE
 		public:
 			shape(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~shape();			
+		protected:
+			void render_path(render_context& ctx) const;
 		private:
 			virtual void handle_render(render_context& ctx) const override;
-			void render_sub_paths(render_context& ctx) const;
 			std::vector<path_commandPtr> path_;
 		};
 

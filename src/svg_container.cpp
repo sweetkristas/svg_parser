@@ -81,12 +81,11 @@ namespace KRE
 		{
 		}
 
-		void container::handle_render(render_context& ctx) const
+		void container::render_children(render_context& ctx) const
 		{
-			// XXXX
-			/*
+			std::cerr << "container::render_children" << std::endl;
 			cairo_push_group(ctx.cairo());
-			if(!clip_path_id().empty()) {
+			/*if(!clip_path_id().empty()) {
 				auto cp = find_child(clip_path_id());
 				if(cp) {
 					cp->clip_render(ctx);
@@ -94,14 +93,18 @@ namespace KRE
 				} else {
 					std::cerr << "WARNING: Couldn't find specified 'clip-path' element '" << clip_path_id() << "'" << std::endl;
 				}
-			}
+			}*/
 
-			for(auto s : shape_) {
-				s->cairo_render(ctx);
+			for(auto s : elements_) {
+				s->render(ctx);
 			}
 			cairo_pop_group_to_source(ctx.cairo());
 			cairo_paint_with_alpha(ctx.cairo(), ctx.opacity_top());
-			*/
+		}
+
+		void container::handle_render(render_context& ctx) const
+		{
+			ASSERT_LOG(false, "Calling container::handle_render is probably an error.");
 		}
 
 		element_ptr container::handle_find_child(const std::string& id) const
@@ -168,7 +171,8 @@ namespace KRE
 		void svg::handle_render(render_context& ctx) const
 		{
 			/// XXX
-			container::render(ctx);
+			std::cerr << "svg::handle_render" << std::endl;
+			render_children(ctx);
 		}
 
 		group::group(element* parent, const ptree& pt)
@@ -185,6 +189,9 @@ namespace KRE
 			/// XXX
 			// call base-class
 			//container::render(ctx);
+			std::cerr << "group::handle_render" << std::endl;
+			attribute_manager pp(pp(), ctx);
+			render_children(ctx);
 		}
 
 		defs::defs(element* parent, const ptree& pt)
@@ -201,6 +208,7 @@ namespace KRE
 			/// XXX
 			// call base-class
 			//container::render(ctx);
+			std::cerr << "defs::handle_render" << std::endl;
 		}
 
 		clip_path::clip_path(element* parent, const ptree& pt)
@@ -217,6 +225,8 @@ namespace KRE
 			/// XXX
 			// call base-class
 			//container::render(ctx);
+			std::cerr << "clip_path::handle_render" << std::endl;
+			render_children(ctx);
 		}
 	}
 }

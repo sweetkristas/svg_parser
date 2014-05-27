@@ -75,6 +75,12 @@ namespace KRE
 
 		void shape::handle_render(render_context& ctx) const 
 		{
+			attribute_manager pp(pp(), ctx);
+			render_path(ctx);
+		}
+
+		void shape::render_path(render_context& ctx) const 
+		{
 			// if(!cairo_has_current_point(ctx.cairo())) {
 			//		cairo_move_to(ctx.cairo(), 0, 0);
 			// }
@@ -85,6 +91,8 @@ namespace KRE
 					p->cairo_render(path_ctx);
 				}
 			}
+			cairo_stroke_preserve(ctx.cairo());
+			cairo_fill(ctx.cairo());
 		}
 
 		// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
@@ -120,12 +128,17 @@ namespace KRE
 		
 		void circle::handle_render(render_context& ctx) const 
 		{
+
 			double cx = cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double cy = cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double r  = radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			cairo_arc(ctx.cairo(), cx, cy, r, 0.0, 2 * M_PI);
 
-			shape::render(ctx);
+			attribute_manager pp(pp(), ctx);
+			cairo_stroke_preserve(ctx.cairo());
+			cairo_fill(ctx.cairo());
+
+			shape::render_path(ctx);
 		}
 
 		ellipse::ellipse(element* doc, const ptree& pt)
@@ -171,7 +184,7 @@ namespace KRE
 			cairo_arc_negative(ctx.cairo(), 0.0, 0.0, 1.0, 0.0, 2*M_PI);
 			cairo_restore(ctx.cairo());
 
-			shape::render(ctx);
+			shape::render_path(ctx);
 		}
 
 		rectangle::rectangle(element* doc, const ptree& pt) 
@@ -224,7 +237,7 @@ namespace KRE
 
 			cairo_rectangle(ctx.cairo(), x, y, w, h);
 
-			shape::render(ctx);
+			shape::render_path(ctx);
 		}
 
 		polygon::polygon(element* doc, const ptree& pt) 
@@ -255,7 +268,7 @@ namespace KRE
 			}
 			cairo_close_path(ctx.cairo());
 
-			shape::render(ctx);
+			shape::render_path(ctx);
 		}
 
 		text::text(element* doc, const ptree& pt) 
@@ -321,7 +334,7 @@ namespace KRE
 			}*/
 			ASSERT_LOG(false, "XXX: fixme text::handle_render");
 
-			shape::render(ctx);
+			shape::render_path(ctx);
 		}
 
 		line::line(element* doc, const ptree& pt)
@@ -392,7 +405,7 @@ namespace KRE
 					cairo_line_to(ctx.cairo(), x, y);
 				}
 			}
-			shape::render(ctx);
+			shape::render_path(ctx);
 		}
 	}
 }

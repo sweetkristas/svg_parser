@@ -28,12 +28,37 @@
 #include "svg_fwd.hpp"
 #include "svg_length.hpp"
 #include "svg_paint.hpp"
+#include "svg_render.hpp"
 #include "uri.hpp"
 
 namespace KRE
 {
 	namespace SVG
 	{
+		class base_attrib
+		{
+		public:
+			base_attrib() {}
+			virtual ~base_attrib() {}
+			virtual void apply(render_context& ctx) const = 0;
+			virtual void clear(render_context& ctx) const = 0;
+		};
+
+		class attribute_manager
+		{
+		public:
+			attribute_manager(const base_attrib* attrib, render_context& ctx) 
+				: attrib_(attrib), ctx_(ctx) {
+				attrib_->apply(ctx_);
+			}
+			~attribute_manager() {
+				attrib_->clear(ctx_);
+			}
+		private:
+			const base_attrib* attrib_;
+			render_context& ctx_;
+		};
+
 		enum class FontStyle {
 			INHERIT,
 			NORMAL,
@@ -97,11 +122,13 @@ namespace KRE
 			VALUE,
 		};
 
-		class font_attribs
+		class font_attribs : public base_attrib
 		{
 		public:
 			font_attribs(const boost::property_tree::ptree& pt);
 			virtual ~font_attribs();
+			void apply(render_context& ctx) const override;
+			void clear(render_context& ctx) const override;
 		private:
 			std::vector<std::string> family_;
 			FontStyle style_;
@@ -204,11 +231,13 @@ namespace KRE
 			VALUE,
 		};
 
-		class text_attribs
+		class text_attribs : public base_attrib
 		{
 		public:
 			text_attribs(const boost::property_tree::ptree& pt);
 			virtual ~text_attribs();
+			void apply(render_context& ctx) const override;
+			void clear(render_context& ctx) const override;
 		private:
 			TextDirection direction_;
 			UnicodeBidi bidi_;
@@ -294,11 +323,13 @@ namespace KRE
 			COLLAPSE,
 		};
 
-		class visual_attribs
+		class visual_attribs : public base_attrib
 		{
 		public:
 			visual_attribs(const boost::property_tree::ptree& pt);
 			virtual ~visual_attribs();
+			void apply(render_context& ctx) const override;
+			void clear(render_context& ctx) const override;
 		private:
 			Overflow overflow_;
 			Clip clip_;
@@ -332,11 +363,13 @@ namespace KRE
 			VALUE,
 		};
 
-		class clipping_attribs
+		class clipping_attribs : public base_attrib
 		{
 		public:
 			clipping_attribs(const boost::property_tree::ptree& pt);
 			virtual ~clipping_attribs();
+			void apply(render_context& ctx) const override;
+			void clear(render_context& ctx) const override;
 		private:
 			FuncIriValue path_;
 			std::string path_ref_;
@@ -353,11 +386,13 @@ namespace KRE
 			NEW,
 		};
 		
-		class filter_effect_attribs
+		class filter_effect_attribs : public base_attrib
 		{
 		public:
 			filter_effect_attribs(const boost::property_tree::ptree& pt);
 			virtual ~filter_effect_attribs();
+			void apply(render_context& ctx) const override;
+			void clear(render_context& ctx) const override;
 		private:
 			Background enable_background_;
 			// if enable_background_==NEW these contain the co-ordinates specified.
@@ -451,11 +486,13 @@ namespace KRE
 			IRI,
 		};
 
-		class painting_properties
+		class painting_properties : public base_attrib
 		{
 		public:
 			painting_properties(const boost::property_tree::ptree& pt);
 			virtual ~painting_properties();
+			void apply(render_context& ctx) const override;
+			void clear(render_context& ctx) const override;
 		private:
 			// default none
 			paint_ptr stroke_;
@@ -502,15 +539,20 @@ namespace KRE
 		};
 
 		// Apply to path, line, polyline and polygon elements.
-		class marker_attribs
+		class marker_attribs : public base_attrib
 		{
 		public:
 			marker_attribs(const boost::property_tree::ptree& pt);
 			virtual ~marker_attribs();
+			void apply(render_context& ctx) const override;
+			void clear(render_context& ctx) const override;
 		private:
 			FuncIriValue start_;
+			uri::uri start_iri_;
 			FuncIriValue mid_;
+			uri::uri mid_iri_;
 			FuncIriValue end_;
+			uri::uri end_iri_;
 		};
 	}
 }

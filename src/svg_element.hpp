@@ -26,6 +26,8 @@
 #include "geometry.hpp"
 #include "svg_fwd.hpp"
 #include "svg_render.hpp"
+#include "svg_style.hpp"
+#include "utils.hpp"
 
 namespace KRE
 {
@@ -69,13 +71,30 @@ namespace KRE
 			const svg_length& height() const { return height_; }
 
 			static element_ptr factory(element* parent, const boost::property_tree::ptree& svg_data);
+		protected:
+			const visual_attribs* va() const { return &visual_attribs_; }
+			const clipping_attribs* ca() const { return &clipping_attribs_; }
+			const filter_effect_attribs* fea() const { return &filter_effect_attribs_; }
+			const painting_properties* pp() const { return &painting_properties_; }
+			const marker_attribs* ma() const { return &marker_attribs_; }
+			const font_attribs* fa() const { return &font_attribs_; }
+			const text_attribs* ta() const { return &text_attribs_; }
 		private:
+			DISALLOW_COPY_ASSIGN_AND_DEFAULT(element);
+
 			virtual void handle_render(render_context& ctx) const = 0;
 			virtual element_ptr handle_find_child(const std::string& id) const { return element_ptr(); }
 
-
 			// top level parent element. if NULL then this is the top level element.
 			element* parent_;
+
+			visual_attribs visual_attribs_;
+			clipping_attribs clipping_attribs_;
+			filter_effect_attribs filter_effect_attribs_;
+			painting_properties painting_properties_;
+			marker_attribs marker_attribs_;
+			font_attribs font_attribs_;
+			text_attribs text_attribs_;
 
 			// list of transforms
 			std::vector<transform_ptr> transforms_;
@@ -103,6 +122,7 @@ namespace KRE
 			use_element(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~use_element();
 		private:
+			DISALLOW_COPY_ASSIGN_AND_DEFAULT(use_element);
 			virtual void handle_render(render_context& ctx) const override;
 			std::string xlink_href_;
 		};

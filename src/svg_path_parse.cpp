@@ -95,6 +95,9 @@ namespace KRE
 				if(is_absolute()) {
 					cairo_move_to(ctx.cairo_context(), x_, y_); 
 				} else {
+					if(!cairo_has_current_point(ctx.cairo_context())) {
+						cairo_move_to(ctx.cairo_context(), 0, 0);
+					}
 					cairo_rel_move_to(ctx.cairo_context(), x_, y_);
 				}
 				ctx.clear_control_points();

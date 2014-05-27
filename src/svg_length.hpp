@@ -47,9 +47,9 @@ namespace KRE
 			};
 			svg_length() : value_(100.0f), units_(SVG_LENGTHTYPE_PERCENTAGE) {			
 			}
-			svg_length(float value, LengthUnit unit) : value_(value), units_(unit) {
+			explicit svg_length(float value, LengthUnit unit) : value_(value), units_(unit) {
 			}
-			svg_length(const std::string& length) {
+			explicit svg_length(const std::string& length) {
 				from_string(length);
 			};
 			void from_string(const std::string& length) {

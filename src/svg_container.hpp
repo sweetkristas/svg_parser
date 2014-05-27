@@ -44,6 +44,8 @@ namespace KRE
 		public:
 			container(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~container();
+		protected:
+			void render_children(render_context& ctx) const;
 		private:
 			virtual void handle_render(render_context& ctx) const override;
 			element_ptr handle_find_child(const std::string& id) const override;

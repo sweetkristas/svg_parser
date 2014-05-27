@@ -24,12 +24,34 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 
+#include "logger.hpp"
 #include "svg_style.hpp"
 
 namespace KRE
 {
 	namespace SVG
 	{
+		namespace
+		{
+			FuncIriValue parse_func_iri_value(const std::string& value, uri::uri& iri)
+			{
+				FuncIriValue ret = FuncIriValue::NONE;
+				if(value == "inherit") {
+					ret = FuncIriValue::INHERIT;
+				} else if(value == "none") {
+					// use default
+				} else {
+					if(value.substr(0,4) == "url(" && value.back() == ')') {
+						iri = uri::uri::parse(value.substr(4, value.size()-5));
+					} else {
+						LOG_WARN("No url found when parsing FuncIRI value: " << value);
+					}
+					ret = FuncIriValue::FUNC_IRI;
+				}
+				return ret;
+			}
+		}
+
 		using namespace boost::property_tree;
 
 		font_attribs::font_attribs(const ptree& pt)
@@ -179,6 +201,14 @@ namespace KRE
 		}
 
 		font_attribs::~font_attribs()
+		{
+		}
+
+		void font_attribs::apply(render_context& ctx) const
+		{
+		}
+
+		void font_attribs::clear(render_context& ctx) const
 		{
 		}
 
@@ -421,6 +451,15 @@ namespace KRE
 		{
 		}
 
+		void text_attribs::apply(render_context& ctx) const
+		{
+		}
+
+		void text_attribs::clear(render_context& ctx) const
+		{
+		}
+
+
 		visual_attribs::visual_attribs(const ptree& pt)
 			: overflow_(Overflow::VISIBLE),
 			clip_(Clip::AUTO),
@@ -605,6 +644,14 @@ namespace KRE
 		{
 		}
 
+		void visual_attribs::apply(render_context& ctx) const
+		{
+		}
+
+		void visual_attribs::clear(render_context& ctx) const
+		{
+		}
+
 		clipping_attribs::clipping_attribs(const ptree& pt)
 			: path_(FuncIriValue::NONE),
 			rule_(ClipRule::NON_ZERO),
@@ -673,6 +720,14 @@ namespace KRE
 		}
 
 		clipping_attribs::~clipping_attribs()
+		{
+		}
+
+		void clipping_attribs::apply(render_context& ctx) const
+		{
+		}
+
+		void clipping_attribs::clear(render_context& ctx) const
 		{
 		}
 
@@ -762,6 +817,14 @@ namespace KRE
 		{
 		}
 
+		void filter_effect_attribs::apply(render_context& ctx) const
+		{
+		}
+
+		void filter_effect_attribs::clear(render_context& ctx) const
+		{
+		}
+
 		painting_properties::painting_properties(const ptree& pt)
 			: stroke_(paint_ptr(new paint())),
 			stroke_opacity_(OpacityAttrib::VALUE),
@@ -774,7 +837,7 @@ namespace KRE
 			stroke_miter_limit_value_(4.0),
 			stroke_dash_array_(DashArrayAttrib::NONE),
 			stroke_dash_offset_(DashOffsetAttrib::VALUE),
-			stroke_dash_offset_value_(0),
+			stroke_dash_offset_value_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
 			fill_(paint_ptr(new paint(0,0,0))),
 			fill_rule_(FillRuleAttrib::EVENODD),
 			fill_opacity_(OpacityAttrib::VALUE),
@@ -1045,5 +1108,49 @@ namespace KRE
 		{
 		}
 
+		void painting_properties::apply(render_context& ctx) const
+		{
+		}
+
+		void painting_properties::clear(render_context& ctx) const
+		{
+		}
+
+		marker_attribs::marker_attribs(const ptree& pt)
+		{
+			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+
+			// using the marker attribute set's all three (start,mid,end) to the same value.
+			auto marker = attributes.get_child_optional("marker");
+			if(marker) {
+				start_ = parse_func_iri_value(marker->data(), start_iri_);
+				end_ = mid_ = start_;
+				end_iri_ = mid_iri_ = start_iri_;
+			}
+			auto marker_start = attributes.get_child_optional("marker-start");
+			if(marker_start) {
+				start_ = parse_func_iri_value(marker_start->data(), start_iri_);
+			}
+			auto marker_mid = attributes.get_child_optional("marker-mid");
+			if(marker_mid) {
+				mid_ = parse_func_iri_value(marker_mid->data(), mid_iri_);
+			}
+			auto marker_end = attributes.get_child_optional("marker-end");
+			if(marker_end) {
+				end_ = parse_func_iri_value(marker_end->data(), end_iri_);
+			}
+		}
+
+		marker_attribs::~marker_attribs()
+		{
+		}
+
+		void marker_attribs::apply(render_context& ctx) const
+		{
+		}
+
+		void marker_attribs::clear(render_context& ctx) const
+		{
+		}
 	}
 }

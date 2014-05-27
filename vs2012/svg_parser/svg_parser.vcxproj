@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\color.cpp" />
     <ClCompile Include="..\..\src\filesystem.cpp" />
+    <ClCompile Include="..\..\src\logger.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\svg_attribs.cpp" />
     <ClCompile Include="..\..\src\svg_container.cpp" />
@@ -32,6 +33,7 @@
     <ClInclude Include="..\..\src\filesystem.hpp" />
     <ClInclude Include="..\..\src\formatter.hpp" />
     <ClInclude Include="..\..\src\geometry.hpp" />
+    <ClInclude Include="..\..\src\logger.hpp" />
     <ClInclude Include="..\..\src\profile_timer.hpp" />
     <ClInclude Include="..\..\src\SDLWrapper.hpp" />
     <ClInclude Include="..\..\src\svg_attribs.hpp" />

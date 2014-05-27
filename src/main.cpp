@@ -12,8 +12,8 @@
 
 namespace 
 {
-	const int width = 1200;
-	const int height = 400;
+	const int width = 512;//1200;
+	const int height = 512;//400;
 }
 
 int main(int argc, char* argv[])

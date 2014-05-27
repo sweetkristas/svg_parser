@@ -33,6 +33,13 @@ namespace KRE
 
 		element::element(element* parent, const ptree& pt) 
 			: core_attribs(pt), 
+			visual_attribs_(pt),
+			clipping_attribs_(pt),
+			filter_effect_attribs_(pt),
+			painting_properties_(pt),
+			marker_attribs_(pt),
+			font_attribs_(pt),
+			text_attribs_(pt),
             parent_(parent),
             external_resources_required_(false),
 			x_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
@@ -97,8 +104,15 @@ namespace KRE
 			// XXX need to translate if x/y specified and use width/height from svg element if
 			// overriding -- well map them to ctx.width()/ctx.height()
 			// XXX also need to process preserveAspectRatio value.
+			cairo_save(ctx.cairo());
 			cairo_scale(ctx.cairo(), ctx.width()/view_box_.w(), ctx.height()/view_box_.h());
+			if(transforms_.size() > 0) {
+				for(auto trf : transforms_) {
+					trf->apply(ctx);
+				}
+			}
 			handle_render(ctx);
+			cairo_restore(ctx.cairo());
 		}
 
         void element::apply_transforms(render_context& ctx) const
@@ -112,7 +126,7 @@ namespace KRE
 		{
 			for(auto& v : pt) {
 				if(v.first == "svg") {
-					return element_ptr(new svg(parent, pt));
+					return element_ptr(new svg(parent, v.second));
 				}
 			}
 			return element_ptr();
