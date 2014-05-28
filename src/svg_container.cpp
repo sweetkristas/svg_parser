@@ -190,7 +190,7 @@ namespace KRE
 			// call base-class
 			//container::render(ctx);
 			std::cerr << "group::handle_render" << std::endl;
-			attribute_manager pp(pp(), ctx);
+			attribute_manager pp1(pp(), ctx);
 			render_children(ctx);
 		}
 

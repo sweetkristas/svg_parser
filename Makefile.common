@@ -8,6 +8,7 @@ objects = \
 	src/filesystem.o \
 	src/main.o \
 	src/color.o \
+	src/logger.o \
 	src/svg_container.o \
 	src/svg_gradient.o \
 	src/svg_parse.o \

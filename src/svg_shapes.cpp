@@ -75,7 +75,7 @@ namespace KRE
 
 		void shape::handle_render(render_context& ctx) const 
 		{
-			attribute_manager pp(pp(), ctx);
+			attribute_manager pp1(pp(), ctx);
 			render_path(ctx);
 		}
 
@@ -134,7 +134,7 @@ namespace KRE
 			double r  = radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			cairo_arc(ctx.cairo(), cx, cy, r, 0.0, 2 * M_PI);
 
-			attribute_manager pp(pp(), ctx);
+			attribute_manager pp1(pp(), ctx);
 			cairo_stroke_preserve(ctx.cairo());
 			cairo_fill(ctx.cairo());
 
