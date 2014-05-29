@@ -826,7 +826,31 @@ namespace KRE
 		}
 
 		painting_properties::painting_properties(const ptree& pt)
-			: stroke_(paint_ptr(new paint())),
+			: stroke_(paint_ptr()),
+			stroke_opacity_(OpacityAttrib::UNSET),
+			stroke_opacity_value_(1.0),
+			stroke_width_(StrokeWidthAttrib::UNSET),
+			stroke_width_value_(1.0),
+			stroke_linecap_(LineCapAttrib::UNSET),
+			stroke_linejoin_(LineJoinAttrib::UNSET),
+			stroke_miter_limit_(MiterLimitAttrib::UNSET),
+			stroke_miter_limit_value_(4.0),
+			stroke_dash_array_(DashArrayAttrib::UNSET),
+			stroke_dash_offset_(DashOffsetAttrib::UNSET),
+			stroke_dash_offset_value_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
+			fill_(paint_ptr()),
+			fill_rule_(FillRuleAttrib::UNSET),
+			fill_opacity_(OpacityAttrib::UNSET),
+			fill_opacity_value_(1.0),
+			color_interpolation_(ColorInterpolationAttrib::UNSET),
+			color_interpolation_filters_(ColorInterpolationAttrib::UNSET),
+			color_rendering_(RenderingAttrib::UNSET),
+			shape_rendering_(ShapeRenderingAttrib::UNSET),
+			text_rendering_(TextRenderingAttrib::UNSET),
+			image_rendering_(RenderingAttrib::UNSET),
+			color_profile_(ColorProfileAttrib::UNSET)
+			/*
+			stroke_(paint_ptr(new paint())),
 			stroke_opacity_(OpacityAttrib::VALUE),
 			stroke_opacity_value_(1.0),
 			stroke_width_(StrokeWidthAttrib::VALUE),
@@ -848,7 +872,7 @@ namespace KRE
 			shape_rendering_(ShapeRenderingAttrib::AUTO),
 			text_rendering_(TextRenderingAttrib::AUTO),
 			image_rendering_(RenderingAttrib::AUTO),
-			color_profile_(ColorProfileAttrib::AUTO)
+			color_profile_(ColorProfileAttrib::AUTO)			*/
 		{
 			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
 
@@ -1110,10 +1134,38 @@ namespace KRE
 
 		void painting_properties::apply(render_context& ctx) const
 		{
+			cairo_save(ctx.cairo());
+			if(stroke_) {
+				ctx.stroke_color_push(stroke_);
+			}
+			if(fill_) {
+				ctx.fill_color_push(fill_);
+			}
+			switch(stroke_width_) {
+				case StrokeWidthAttrib::UNSET:
+					// XXX do nothing
+					break;
+				case StrokeWidthAttrib::INHERIT:
+					// XXX do nothing
+					break;
+				case StrokeWidthAttrib::PERCENTAGE:
+					ASSERT_LOG(false, "fixme: StrokeWidthAttrib::PERCENTAGE");
+					break;
+				case StrokeWidthAttrib::VALUE:
+					cairo_set_line_width(ctx.cairo(), stroke_width_value_);
+					break;
+			}
 		}
 
 		void painting_properties::clear(render_context& ctx) const
 		{
+			if(fill_) {
+				ctx.fill_color_pop();
+			}
+			if(stroke_) {
+				ctx.stroke_color_pop();
+			}
+			cairo_restore(ctx.cairo());
 		}
 
 		marker_attribs::marker_attribs(const ptree& pt)

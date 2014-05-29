@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
 
 namespace KRE
 {
@@ -55,4 +56,6 @@ namespace KRE
 	private:
 		float color_[4];
 	};
+
+	typedef std::shared_ptr<color> color_ptr;
 }

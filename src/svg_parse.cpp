@@ -82,8 +82,8 @@ namespace KRE
 			cairo_set_miter_limit(ctx.cairo(), 4.0);
 			cairo_set_fill_rule(ctx.cairo(), CAIRO_FILL_RULE_WINDING);
 			cairo_set_line_width(ctx.cairo(), 1.0);
-			ctx.fill_color_push(paint(0,0,0,255));
-			ctx.stroke_color_push(paint(0,0,0,0));
+			ctx.fill_color_push(paint_ptr(new paint(0,0,0,255)));
+			ctx.stroke_color_push(paint_ptr());
 			ctx.opacity_push(1.0);
 
 			for(auto p : svg_data_) {

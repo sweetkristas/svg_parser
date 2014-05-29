@@ -27,12 +27,15 @@
 #include <stack>
 
 #include "asserts.hpp"
-#include "svg_paint.hpp"
+#include "color.hpp"
 
 namespace KRE
 {
 	namespace SVG
 	{
+		class paint;
+		typedef std::shared_ptr<paint> paint_ptr;
+
 		class render_context
 		{
 		public:
@@ -50,27 +53,27 @@ namespace KRE
 
 			cairo_t* cairo() { return cairo_; }
 			
-			void fill_color_push(const paint& p) {
+			void fill_color_push(const paint_ptr& p) {
 				fill_color_stack_.emplace(p);
 			}
-			paint fill_color_pop() {
+			paint_ptr fill_color_pop() {
 				auto p = fill_color_stack_.top();
 				fill_color_stack_.pop();
 				return p;
 			}
-			paint fill_color_top() const {
+			paint_ptr fill_color_top() const {
 				return fill_color_stack_.top();
 			}
 
-			void stroke_color_push(const paint& p) {
+			void stroke_color_push(const paint_ptr& p) {
 				stroke_color_stack_.emplace(p);
 			}
-			paint stroke_color_pop() {
+			paint_ptr stroke_color_pop() {
 				auto p = stroke_color_stack_.top();
 				stroke_color_stack_.pop();
 				return p;
 			}
-			paint stroke_color_top() const {
+			paint_ptr stroke_color_top() const {
 				return stroke_color_stack_.top();
 			}
 
@@ -85,12 +88,15 @@ namespace KRE
 			double opacity_top() const {
 				return opacity_stack_.top();
 			}
+			color_ptr get_current_color() const { return current_color_; }
+			void set_current_color(color_ptr cc) { current_color_ = cc; }
 			unsigned width() const { return width_; }
 			unsigned height() const { return height_; }
 		private:
 			cairo_t* cairo_;
-			std::stack<paint> fill_color_stack_;
-			std::stack<paint> stroke_color_stack_;
+			color_ptr current_color_;
+			std::stack<paint_ptr> fill_color_stack_;
+			std::stack<paint_ptr> stroke_color_stack_;
 			std::stack<double> opacity_stack_;
 			unsigned width_;
 			unsigned height_;

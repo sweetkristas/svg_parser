@@ -28,50 +28,54 @@
 #include <string>
 
 #include "color.hpp"
+#include "svg_render.hpp"
 #include "uri.hpp"
 
 namespace KRE
 {
-	class svg_element;
-
-	class paint;
-	typedef std::shared_ptr<paint> paint_ptr;
-
-	enum class ColorAttrib {
-		INHERIT,
-		NONE,
-		CURRENT_COLOR,
-		VALUE,
-		FUNC_IRI,
-		ICC_COLOR,
-	};
-
-	class paint
+	namespace SVG
 	{
-	public:
-		paint();
-		explicit paint(int r, int g, int b, int a=255);
+		class element;
 
-		virtual ~paint();
+		class paint;
+		typedef std::shared_ptr<paint> paint_ptr;
 
-		void set_opacity(double o) { opacity_ = o; }
+		enum class ColorAttrib {
+			INHERIT,
+			NONE,
+			CURRENT_COLOR,
+			VALUE,
+			FUNC_IRI,
+			ICC_COLOR,
+		};
 
-		//void apply(element* doc, render_context& ctx) const;
+		class paint
+		{
+		public:
+			paint();
+			explicit paint(int r, int g, int b, int a=255);
 
-		static paint_ptr from_string(const std::string& s);
-	private:
-		explicit paint(const std::string& s);
+			virtual ~paint();
 
-		ColorAttrib color_attrib_;
-		color color_value_;
-		uri::uri color_ref_;
+			void set_opacity(double o) { opacity_ = o; }
 
-		std::string icc_color_name_;
-		std::vector<double> icc_color_values_;
+			bool apply(const element* parent, render_context& ctx) const;
 
-		ColorAttrib backup_color_attrib_;
-		color backup_color_value_;
+			static paint_ptr from_string(const std::string& s);
+		private:
+			explicit paint(const std::string& s);
 
-		double opacity_;
-	};
+			ColorAttrib color_attrib_;
+			color color_value_;
+			uri::uri color_ref_;
+
+			std::string icc_color_name_;
+			std::vector<double> icc_color_values_;
+
+			ColorAttrib backup_color_attrib_;
+			color backup_color_value_;
+
+			double opacity_;
+		};
+	}
 }

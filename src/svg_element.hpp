@@ -71,6 +71,8 @@ namespace KRE
 			const svg_length& height() const { return height_; }
 
 			static element_ptr factory(element* parent, const boost::property_tree::ptree& svg_data);
+
+			const element* parent() const { return parent_; }
 		protected:
 			const visual_attribs* va() const { return &visual_attribs_; }
 			const clipping_attribs* ca() const { return &clipping_attribs_; }

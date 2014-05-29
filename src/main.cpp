@@ -29,14 +29,17 @@ int main(int argc, char* argv[])
 		}
 	}
 	if(args.size() < 1) {
-		std::cerr << "Usage: " << argv[0] << " [--no-display] <filename> [<filename2> ...]" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " [--no-display] [--no-write] <filename> [<filename2> ...]" << std::endl;
 		return 1;
 	}
 
 	bool display_image = true;
+	bool write_image = true;
 	for(auto& arg : opts) {
 		if(arg == "--no-display") {
 			display_image = false;
+		} else if(arg == "--no-write") {
+			write_image = false;
 		}
 	}
 
@@ -44,6 +47,12 @@ int main(int argc, char* argv[])
 	cairo_t* cairo = cairo_create(surface);
 
 	for(auto& filename : args) {
+		using namespace boost::filesystem;
+		path npath(filename);
+		if(npath.has_extension() && npath.extension().string() != ".svg") {
+			ASSERT_LOG(false, "File has non-svg extension are you sure you have the correct file? " << filename);
+		}
+
 		KRE::SVG::parse p(filename);
 
 		{
@@ -52,12 +61,12 @@ int main(int argc, char* argv[])
 			p.render(ctx);
 		}
 
-		using namespace boost::filesystem;
-		path npath(filename);
-		npath.replace_extension("png");
-		cairo_surface_write_to_png(surface, npath.generic_string().c_str());
-		auto status = cairo_status(cairo);
-		ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status));
+		if(write_image) {
+			npath.replace_extension("png");
+			cairo_surface_write_to_png(surface, npath.generic_string().c_str());
+			auto status = cairo_status(cairo);
+			ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status));
+		}
 	}
 
 	// Early return if writing image to file only.

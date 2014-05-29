@@ -42,6 +42,7 @@ namespace KRE
 			virtual ~shape();			
 		protected:
 			void render_path(render_context& ctx) const;
+			void stroke_and_fill(render_context& ctx) const;
 		private:
 			virtual void handle_render(render_context& ctx) const override;
 			std::vector<path_commandPtr> path_;

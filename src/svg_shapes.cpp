@@ -79,6 +79,18 @@ namespace KRE
 			render_path(ctx);
 		}
 
+		void shape::stroke_and_fill(render_context& ctx) const
+		{
+			auto sc = ctx.stroke_color_top();
+			if(sc && sc->apply(parent(), ctx)) {
+				cairo_stroke_preserve(ctx.cairo());
+			}
+			auto fc = ctx.fill_color_top();
+			if(fc && fc->apply(parent(), ctx)) {
+				cairo_fill(ctx.cairo());
+			}
+		}
+
 		void shape::render_path(render_context& ctx) const 
 		{
 			// if(!cairo_has_current_point(ctx.cairo())) {
@@ -91,8 +103,7 @@ namespace KRE
 					p->cairo_render(path_ctx);
 				}
 			}
-			cairo_stroke_preserve(ctx.cairo());
-			cairo_fill(ctx.cairo());
+			stroke_and_fill(ctx);
 		}
 
 		// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
@@ -135,8 +146,7 @@ namespace KRE
 			cairo_arc(ctx.cairo(), cx, cy, r, 0.0, 2 * M_PI);
 
 			attribute_manager pp1(pp(), ctx);
-			cairo_stroke_preserve(ctx.cairo());
-			cairo_fill(ctx.cairo());
+			stroke_and_fill(ctx);
 
 			shape::render_path(ctx);
 		}
@@ -182,6 +192,7 @@ namespace KRE
 			cairo_translate(ctx.cairo(), cx+rx, cy+ry);
 			cairo_scale(ctx.cairo(), rx, ry);
 			cairo_arc_negative(ctx.cairo(), 0.0, 0.0, 1.0, 0.0, 2*M_PI);
+			stroke_and_fill(ctx);
 			cairo_restore(ctx.cairo());
 
 			shape::render_path(ctx);
@@ -236,6 +247,7 @@ namespace KRE
 			double h  = height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 
 			cairo_rectangle(ctx.cairo(), x, y, w, h);
+			stroke_and_fill(ctx);
 
 			shape::render_path(ctx);
 		}
@@ -267,6 +279,7 @@ namespace KRE
 				++it;
 			}
 			cairo_close_path(ctx.cairo());
+			stroke_and_fill(ctx);
 
 			shape::render_path(ctx);
 		}
@@ -376,6 +389,7 @@ namespace KRE
 			
 			cairo_move_to(ctx.cairo(), x1, y1);
 			cairo_line_to(ctx.cairo(), x2, y2);
+			stroke_and_fill(ctx); // XXX ?
 		}
 
 		polyline::polyline(element* doc, const ptree& pt)
@@ -405,6 +419,7 @@ namespace KRE
 					cairo_line_to(ctx.cairo(), x, y);
 				}
 			}
+			stroke_and_fill(ctx);
 			shape::render_path(ctx);
 		}
 	}

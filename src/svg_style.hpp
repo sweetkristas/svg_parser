@@ -60,6 +60,7 @@ namespace KRE
 		};
 
 		enum class FontStyle {
+			UNSET,
 			INHERIT,
 			NORMAL,
 			ITALIC,
@@ -67,12 +68,14 @@ namespace KRE
 		};
 		
 		enum class FontVariant {
+			UNSET,
 			INHERIT,
 			NORMAL,
 			SMALL_CAPS,
 		};
 
 		enum class FontStretch {
+			UNSET,
 			INHERIT,
 			WIDER,
 			NARROWER,
@@ -88,6 +91,7 @@ namespace KRE
 		};
 
 		enum class FontWeight {
+			UNSET,
 			INHERIT,
 			BOLDER,
 			LIGHTER,
@@ -103,6 +107,7 @@ namespace KRE
 		};
 
 		enum class FontSize {
+			UNSET,
 			INHERIT,
 			XX_SMALL,
 			X_SMALL,
@@ -117,6 +122,7 @@ namespace KRE
 		};
 
 		enum class FontSizeAdjust {
+			UNSET,
 			INHERIT,
 			NONE,
 			VALUE,
@@ -142,12 +148,14 @@ namespace KRE
 		};
 
 		enum class TextDirection {
+			UNSET,
 			INHERIT,
 			LTR,
 			RTL,
 		};
 
 		enum class UnicodeBidi {
+			UNSET,
 			INHERIT,
 			NORMAL,
 			EMBED,
@@ -155,12 +163,14 @@ namespace KRE
 		};
 
 		enum class TextSpacing {
+			UNSET,
 			INHERIT,
 			NORMAL,
 			VALUE,
 		};
 
 		enum class TextDecoration {
+			UNSET,
 			INHERIT,
 			NONE,
 			UNDERLINE,
@@ -170,6 +180,7 @@ namespace KRE
 		};
 
 		enum class TextAlignmentBaseline {
+			UNSET,
             INHERIT,
             AUTO,
             BASELINE,
@@ -186,6 +197,7 @@ namespace KRE
 		};
 
 		enum class TextBaselineShift {
+			UNSET,
             INHERIT,
             BASELINE,
             SUB,
@@ -194,6 +206,7 @@ namespace KRE
 		};
 
 		enum class TextDominantBaseline {
+			UNSET,
             INHERIT,
             AUTO,
             USE_SCRIPT,
@@ -210,12 +223,14 @@ namespace KRE
 		};
 
 		enum class GlyphOrientation {
+			UNSET,
 			INHERIT,
 			AUTO,
 			VALUE,
 		};
 
 		enum class WritingMode {
+			UNSET,
 			INHERIT,
 			LR_TB,
 			RL_TB,
@@ -226,6 +241,7 @@ namespace KRE
 		};
 
 		enum class Kerning {
+			UNSET,
 			INHERIT,
 			AUTO,
 			VALUE,
@@ -263,6 +279,7 @@ namespace KRE
 		};
 
 		enum class Overflow {
+			UNSET,
 			INHERIT,
 			VISIBLE,
 			HIDDEN,
@@ -270,12 +287,14 @@ namespace KRE
 		};
 
 		enum class Clip {
+			UNSET,
 			INHERIT,
 			AUTO,
 			SHAPE,
 		};
 
 		enum class Cursor {
+			UNSET,
 			INHERIT,
 			AUTO,
 			CROSSHAIR,
@@ -296,6 +315,7 @@ namespace KRE
 		};
 
 		enum class Display {
+			UNSET,
 			INHERIT,
 			NONE,
 			INLINE,
@@ -317,6 +337,7 @@ namespace KRE
 		};
 
 		enum class Visibility {
+			UNSET,
 			INHERIT,
 			VISIBLE,
 			HIDDEN,
@@ -347,18 +368,21 @@ namespace KRE
 		};
 
 		enum class FuncIriValue {
+			UNSET,
 			INHERIT,
 			NONE,
 			FUNC_IRI,
 		};
 
 		enum class ClipRule {
+			UNSET,
 			INHERIT,
 			NON_ZERO,
 			EVEN_ODD,
 		};
 
 		enum class OpacityAttrib {
+			UNSET,
 			INHERIT,
 			VALUE,
 		};
@@ -381,6 +405,7 @@ namespace KRE
 		};
 
 		enum class Background {
+			UNSET,
 			INHERIT,
 			ACCUMULATE,
 			NEW,
@@ -409,17 +434,20 @@ namespace KRE
 		};
 
 		enum class FillRuleAttrib {
+			UNSET,
 			INHERIT,
 			NONZERO,
 			EVENODD,
 		};
 		enum class LineJoinAttrib {
+			UNSET,
 			INHERIT,
 			MITER,
 			ROUND,
 			BEVEL,
 		};
 		enum class LineCapAttrib {
+			UNSET,
 			INHERIT,
 			BUTT,
 			ROUND,
@@ -427,28 +455,33 @@ namespace KRE
 		};
 
 		enum class StrokeWidthAttrib {
+			UNSET,
 			INHERIT,
 			PERCENTAGE,
 			VALUE,
 		};
 
 		enum class MiterLimitAttrib {
+			UNSET,
 			INHERIT,
 			VALUE,
 		};
 
 		enum class DashArrayAttrib {
+			UNSET,
 			INHERIT,
 			NONE,
 			VALUE,
 		};
 
 		enum class DashOffsetAttrib {
+			UNSET,
 			INHERIT,
 			VALUE,
 		};
 
 		enum class ColorInterpolationAttrib {
+			UNSET,
 			INHERIT,
 			AUTO,
 			sRGBA,
@@ -456,6 +489,7 @@ namespace KRE
 		};
 		
 		enum class RenderingAttrib {
+			UNSET,
 			INHERIT,
 			AUTO,
 			OPTIMIZE_SPEED,
@@ -463,6 +497,7 @@ namespace KRE
 		};
 
 		enum class ShapeRenderingAttrib {
+			UNSET,
 			INHERIT,
 			AUTO,
 			OPTIMIZE_SPEED,
@@ -471,6 +506,7 @@ namespace KRE
 		};
 
 		enum class TextRenderingAttrib {
+			UNSET,
 			INHERIT,
 			AUTO,
 			OPTIMIZE_SPEED,
@@ -479,6 +515,7 @@ namespace KRE
 		};
 
 		enum class ColorProfileAttrib {
+			UNSET,
 			INHERIT,
 			AUTO,
 			sRGB,
