@@ -137,7 +137,15 @@ namespace KRE
 		class font_attribs : public base_attrib
 		{
 		public:
-			font_attribs(const boost::property_tree::ptree& pt);
+			explicit font_attribs(const std::vector<std::string>& family, 
+				FontStyle style,
+				FontVariant variant,
+				FontWeight weight,
+				FontStretch stretch,
+				double size,
+				double size_adjust);
+			explicit font_attribs(render_context& ctx, const font_attribs& fa);
+			explicit font_attribs(const boost::property_tree::ptree& pt);
 			virtual ~font_attribs();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
@@ -152,6 +160,9 @@ namespace KRE
 			svg_length size_value_;
 			FontSizeAdjust size_adjust_;
 			svg_length size_adjust_value_;
+			// These are the concrete sizes used when queried.
+			double size_value_impl_;
+			double size_adjust_value_impl_;
 		};
 
 		enum class TextDirection {
@@ -281,7 +292,6 @@ namespace KRE
 			Kerning kerning_;
 			svg_length kerning_value_;
 			/*
-				kerning
 				text-anchor
 			*/
 		};

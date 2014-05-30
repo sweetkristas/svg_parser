@@ -145,8 +145,8 @@ namespace KRE
 			void handle_render(render_context& ctx) const override;
 			void handle_clip_render(render_context& ctx) const override;
 			std::string text_;
-			std::vector<svg_length> x_;
-			std::vector<svg_length> y_;
+			std::vector<svg_length> x1_;
+			std::vector<svg_length> y1_;
 			std::vector<svg_length> dx_;
 			std::vector<svg_length> dy_;
 			std::vector<double> rotate_;

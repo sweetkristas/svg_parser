@@ -95,18 +95,7 @@ namespace KRE
 
 		void container::render_children(render_context& ctx) const
 		{
-			std::cerr << "container::render_children" << std::endl;
 			cairo_push_group(ctx.cairo());
-			/*if(!clip_path_id().empty()) {
-				auto cp = find_child(clip_path_id());
-				if(cp) {
-					cp->clip_render(ctx);
-					cairo_clip(ctx.cairo());
-				} else {
-					std::cerr << "WARNING: Couldn't find specified 'clip-path' element '" << clip_path_id() << "'" << std::endl;
-				}
-			}*/
-
 			for(auto s : elements_) {
 				s->render(ctx);
 			}
@@ -194,7 +183,6 @@ namespace KRE
 
 		void svg::handle_render(render_context& ctx) const
 		{
-			std::cerr << "svg::handle_render" << std::endl;
 			render_children(ctx);
 		}
 

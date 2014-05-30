@@ -207,6 +207,32 @@ namespace KRE
 		{
 		}
 
+		font_attribs::font_attribs(const std::vector<std::string>& family, 
+			FontStyle style,
+			FontVariant variant,
+			FontWeight weight,
+			FontStretch stretch,
+			double size,
+			double size_adjust)
+			: family_(family),
+			style_(style),
+			variant_(variant),
+			weight_(weight),
+			stretch_(stretch),
+			size_value_impl_(size),
+			size_adjust_value_impl_(size_adjust)
+		{
+			ASSERT_LOG(style_ == FontStyle::NORMAL || style_ == FontStyle::ITALIC || style_ == FontStyle::OBLIQUE,
+				"font_attribs: style must given as a concrete value.");
+			// XXX
+		}
+
+		font_attribs::font_attribs(render_context& ctx, const font_attribs& fa)
+		{
+			// XXX todo
+		}
+
+
 		void font_attribs::apply(render_context& ctx) const
 		{
 			// XXX
@@ -465,11 +491,19 @@ namespace KRE
 
 		void text_attribs::apply(render_context& ctx) const
 		{
+			if(letter_spacing_ == TextSpacing::VALUE) {
+				ctx.letter_spacing_push(letter_spacing_value_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER));
+			} else if(letter_spacing_ == TextSpacing::NORMAL) {
+				ctx.letter_spacing_push(0);
+			}
 			// XXX
 		}
 
 		void text_attribs::clear(render_context& ctx) const
 		{
+			if(letter_spacing_ == TextSpacing::VALUE || letter_spacing_ == TextSpacing::NORMAL) {
+				ctx.letter_spacing_pop();
+			}
 			// XXX
 		}
 

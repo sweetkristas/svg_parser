@@ -36,6 +36,9 @@ namespace KRE
 		class paint;
 		typedef std::shared_ptr<paint> paint_ptr;
 
+		class text_attribs;
+		typedef std::shared_ptr<text_attribs> text_attribs_ptr;
+
 		class render_context
 		{
 		public:
@@ -92,6 +95,14 @@ namespace KRE
 			void set_current_color(color_ptr cc) { current_color_ = cc; }
 			unsigned width() const { return width_; }
 			unsigned height() const { return height_; }
+
+			double letter_spacing_top() const { return letter_spacing_.top(); }
+			void letter_spacing_push(double spacing) { letter_spacing_.emplace(spacing); }
+			double letter_spacing_pop() {
+				double spacing = letter_spacing_.top();
+				letter_spacing_.pop();
+				return spacing;
+			}
 		private:
 			cairo_t* cairo_;
 			color_ptr current_color_;
@@ -100,6 +111,26 @@ namespace KRE
 			std::stack<double> opacity_stack_;
 			unsigned width_;
 			unsigned height_;
+			/* All the text context to store -- XXX fixme come up with a more elegant solution
+			TextDirection direction_;
+			UnicodeBidi bidi_;
+			TextSpacing letter_spacing_;
+			svg_length letter_spacing_value_;
+			TextSpacing word_spacing_;
+			svg_length word_spacing_value_;
+			TextDecoration decoration_;
+			TextAlignmentBaseline baseline_alignment_;
+			TextBaselineShift baseline_shift_;
+			TextDominantBaseline dominant_baseline_;
+			GlyphOrientation glyph_orientation_vertical_;
+			double glyph_orientation_vertical_value_;
+			GlyphOrientation glyph_orientation_horizontal_;
+			double glyph_orientation_horizontal_value_;
+			WritingMode writing_mode_;
+			Kerning kerning_;
+			svg_length kerning_value_;
+			*/
+			std::stack<double> letter_spacing_;
 		};
 
 	}

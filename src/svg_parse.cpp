@@ -89,11 +89,13 @@ namespace KRE
 			ctx.fill_color_push(paint_ptr(new paint(0,0,0,255)));
 			ctx.stroke_color_push(paint_ptr(new paint(0,0,0,0)));
 			ctx.opacity_push(1.0);
+			ctx.letter_spacing_push(0);
 
 			for(auto p : svg_data_) {
 				p->render(ctx);
 			}
 
+			ctx.letter_spacing_pop();
 			ctx.opacity_pop();
 			ctx.stroke_color_pop();
 			ctx.fill_color_pop();

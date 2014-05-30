@@ -112,6 +112,7 @@ namespace KRE
 			}
 			attribute_manager pp1(pp(), ctx);
 			attribute_manager ca1(ca(), ctx);
+			attribute_manager ta1(ta(), ctx);
 			handle_render(ctx);
 			cairo_restore(ctx.cairo());
 		}

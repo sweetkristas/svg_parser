@@ -22,6 +22,7 @@
 */
 
 #include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
 #include <set>
 
 #include "svg_shapes.hpp"
@@ -35,7 +36,7 @@ namespace KRE
 
 		namespace
 		{
-			point_list create_point_list(const std::string& s)
+			std::vector<svg_length> parse_list_of_lengths(const std::string& s)
 			{
 				std::vector<svg_length> res;
 				boost::char_separator<char> seperators(" \n\t\r,");
@@ -43,6 +44,12 @@ namespace KRE
 				for(auto it = tok.begin(); it != tok.end(); ++it) {
 					res.emplace_back(*it);
 				}
+				return res;
+			}
+
+			point_list create_point_list(const std::string& s)
+			{
+				auto res = parse_list_of_lengths(s);
 				ASSERT_LOG(res.size() % 2 == 0, "point list has an odd number of points.");
 				auto it = res.begin();
 				point_list points;
@@ -54,6 +61,21 @@ namespace KRE
 					points.emplace_back(p1, p2);
 				}
 				return points;
+			}
+
+			std::vector<double> parse_list_of_numbers(const std::string& s)
+			{
+				std::vector<double> res;
+				boost::char_separator<char> seperators(" \n\t\r,");
+				boost::tokenizer<boost::char_separator<char>> tok(s, seperators);
+				for(auto it = tok.begin(); it != tok.end(); ++it) {
+					try {
+						res.push_back(boost::lexical_cast<double>(*it));
+					} catch(boost::bad_lexical_cast&) {
+						ASSERT_LOG(false, "Unable to convert value '" << *it << "' to a number");
+					}
+				}
+				return res;
 			}
 		}
 
@@ -80,7 +102,7 @@ namespace KRE
 
 		void shape::handle_clip_render(render_context& ctx) const
 		{
-			// XXX
+			clip_render_path(ctx);
 		}
 
 		void shape::stroke_and_fill(render_context& ctx) const
@@ -97,10 +119,6 @@ namespace KRE
 
 		void shape::render_path(render_context& ctx) const 
 		{
-			// if(!cairo_has_current_point(ctx.cairo())) {
-			//		cairo_move_to(ctx.cairo(), 0, 0);
-			// }
-			
 			if(!path_.empty()) {
 				path_cmd_context path_ctx(ctx.cairo());
 				for(auto p : path_) {
@@ -364,27 +382,27 @@ namespace KRE
 			if(attributes) {
 				auto x = attributes->get_child_optional("x");
 				if(x) {
-					//x_ = svg_length(x->data());
+					x1_ = parse_list_of_lengths(x->data());
 				}
 				auto y = attributes->get_child_optional("y");
 				if(y) {
-					//y_ = svg_length(y->data());
+					y1_ = parse_list_of_lengths(y->data());
 				}
 				auto dx = attributes->get_child_optional("dx");
 				if(dx) {
-					//dx_ = svg_length(dx->data());
+					dx_ = parse_list_of_lengths(dx->data());
 				}
 				auto dy = attributes->get_child_optional("dy");
 				if(dy) {
-					//dy_ = svg_length(dy->data());
+					dy_ = parse_list_of_lengths(dy->data());
 				}
 				auto rotate = attributes->get_child_optional("rotate");
 				if(rotate) {
-					//rotate_ = svg_length(rotate->data());
+					rotate_ = parse_list_of_numbers(rotate->data());
 				}
 				auto text_length = attributes->get_child_optional("textLength");
 				if(text_length) {
-					//text_length_ = svg_length(text_length->data());
+					text_length_ = svg_length(text_length->data());
 				}
 				auto length_adjust = attributes->get_child_optional("lengthAdjust");
 				if(length_adjust) {
@@ -405,8 +423,7 @@ namespace KRE
 
 		void text::render_text(render_context& ctx) const
 		{
-			/// need parent value.
-			/*double letter_spacing = GetFontProperties().get_letter_spacing(0);
+			double letter_spacing = ctx.letter_spacing_top();
 			if(letter_spacing > 0) {
 				for(auto c : text_) {
 					const char s[2] = {c,0};
@@ -415,9 +432,7 @@ namespace KRE
 				}
 			} else {
 				cairo_show_text(ctx.cairo(), text_.c_str());
-			}*/
-			ASSERT_LOG(false, "XXX: fixme text::handle_render");
-
+			}
 		}
 
 		void text::handle_render(render_context& ctx) const 
