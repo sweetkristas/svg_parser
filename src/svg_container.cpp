@@ -35,38 +35,43 @@ namespace KRE
         container::container(element* parent, const ptree& pt)
             : element(parent, pt)
 		{
+			if(parent == nullptr) {
+				parent = this;
+			}
 			// can contain graphics elements and other container elements.
 			// 'a', 'defs', 'glyph', 'g', 'marker', 'mask', 'missing-glyph', 'pattern', 'svg', 'switch' and 'symbol'.
 			// 'circle', 'ellipse', 'image', 'line', 'path', 'polygon', 'polyline', 'rect', 'text' and 'use'.
 
-            //const ptree & attributes = pt.get_child("<xmlattr>", ptree());
+            //auto attributes = pt.get_child_optional("<xmlattr>");
 			for(auto& v : pt) {
 				if(v.first == "path") {
-					elements_.emplace_back(new shape(this, v.second));
+					elements_.emplace_back(new shape(parent, v.second));
 				} else if(v.first == "g") {
-					elements_.emplace_back(new group(this, v.second));
+					elements_.emplace_back(new group(parent, v.second));
 				} else if(v.first == "rect") {
-					elements_.emplace_back(new rectangle(this, v.second));
+					elements_.emplace_back(new rectangle(parent, v.second));
 				} else if(v.first == "text") {
-					elements_.emplace_back(new text(this, v.second));
+					elements_.emplace_back(new text(parent, v.second));
 				} else if(v.first == "line") {
-					elements_.emplace_back(new line(this,v.second));
+					elements_.emplace_back(new line(parent,v.second));
 				} else if(v.first == "circle") {
-					elements_.emplace_back(new circle(this,v.second));
+					elements_.emplace_back(new circle(parent,v.second));
+				} else if(v.first == "polygon") {
+					elements_.emplace_back(new polygon(parent,v.second));
 				} else if(v.first == "polyline") {
-					elements_.emplace_back(new polyline(this,v.second));
+					elements_.emplace_back(new polyline(parent,v.second));
 				} else if(v.first == "ellipse") {
-					elements_.emplace_back(new ellipse(this,v.second));
+					elements_.emplace_back(new ellipse(parent,v.second));
 				} else if(v.first == "desc") {
 					// ignore
 				} else if(v.first == "title") {
 					// ignore
 				} else if(v.first == "use") {
-					elements_.emplace_back(new use_element(this,v.second));
+					elements_.emplace_back(new use_element(parent,v.second));
 				} else if(v.first == "defs") {
-					elements_.emplace_back(new defs(this,v.second));
+					elements_.emplace_back(new defs(parent,v.second));
 				} else if(v.first == "clipPath") {
-					elements_.emplace_back(new clip_path(this,v.second));
+					elements_.emplace_back(new clip_path(parent,v.second));
 				} else if(v.first == "<xmlattr>") {
 					// ignore
 				} else if(v.first == "<xmlcomment>") {
@@ -79,6 +84,13 @@ namespace KRE
 
 		container::~container()
 		{
+		}
+
+		void container::handle_resolve()
+		{
+			for(auto e : elements_) {
+				e->resolve();
+			}
 		}
 
 		void container::render_children(render_context& ctx) const
@@ -102,9 +114,21 @@ namespace KRE
 			cairo_paint_with_alpha(ctx.cairo(), ctx.opacity_top());
 		}
 
+		void container::clip_render_children(render_context& ctx) const
+		{
+			for(auto s : elements_) {
+				s->clip_render(ctx);
+			}
+		}
+
 		void container::handle_render(render_context& ctx) const
 		{
 			ASSERT_LOG(false, "Calling container::handle_render is probably an error.");
+		}
+
+		void container::handle_clip_render(render_context& ctx) const
+		{
+			// do nothing
 		}
 
 		element_ptr container::handle_find_child(const std::string& id) const
@@ -170,9 +194,13 @@ namespace KRE
 
 		void svg::handle_render(render_context& ctx) const
 		{
-			/// XXX
 			std::cerr << "svg::handle_render" << std::endl;
 			render_children(ctx);
+		}
+
+		void svg::handle_clip_render(render_context& ctx) const
+		{
+			clip_render_children(ctx);
 		}
 
 		group::group(element* parent, const ptree& pt)
@@ -186,12 +214,14 @@ namespace KRE
 
 		void group::handle_render(render_context& ctx) const
 		{
-			/// XXX
-			// call base-class
-			//container::render(ctx);
 			std::cerr << "group::handle_render" << std::endl;
 			attribute_manager pp1(pp(), ctx);
 			render_children(ctx);
+		}
+
+		void group::handle_clip_render(render_context& ctx) const
+		{
+			clip_render_children(ctx);
 		}
 
 		defs::defs(element* parent, const ptree& pt)
@@ -205,10 +235,14 @@ namespace KRE
 
 		void defs::handle_render(render_context& ctx) const
 		{
-			/// XXX
-			// call base-class
-			//container::render(ctx);
-			std::cerr << "defs::handle_render" << std::endl;
+			// nothing to be done
+			// i.e. defs is not something directly rendered it is a container
+			// for holding other definitions
+		}
+
+		void defs::handle_clip_render(render_context& ctx) const
+		{
+			// nothing to be done
 		}
 
 		clip_path::clip_path(element* parent, const ptree& pt)
@@ -222,11 +256,21 @@ namespace KRE
 
 		void clip_path::handle_render(render_context& ctx) const
 		{
-			/// XXX
-			// call base-class
-			//container::render(ctx);
-			std::cerr << "clip_path::handle_render" << std::endl;
-			render_children(ctx);
+			// nothing to be done
+			// i.e. clip_path should not be rendered directly instead
+			// handle_clip should be called to clip to the correct path
 		}
+
+		void clip_path::handle_clip(render_context& ctx) const
+		{
+			// The only class that can handle this case.
+			clip_render_children(ctx);
+		}
+
+		void clip_path::handle_clip_render(render_context& ctx) const
+		{
+			// nothing to be done.
+		}
+
 	}
 }

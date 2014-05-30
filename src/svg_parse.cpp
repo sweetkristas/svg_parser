@@ -68,6 +68,10 @@ namespace KRE
 			read_xml(filename, pt);
 
 			svg_data_.emplace_back(element::factory(nullptr, pt));
+			// Resolve all the references.
+			for(auto p : svg_data_) {
+				p->resolve();
+			}
 		}
 
 		parse::~parse()
@@ -83,7 +87,7 @@ namespace KRE
 			cairo_set_fill_rule(ctx.cairo(), CAIRO_FILL_RULE_WINDING);
 			cairo_set_line_width(ctx.cairo(), 1.0);
 			ctx.fill_color_push(paint_ptr(new paint(0,0,0,255)));
-			ctx.stroke_color_push(paint_ptr());
+			ctx.stroke_color_push(paint_ptr(new paint(0,0,0,0)));
 			ctx.opacity_push(1.0);
 
 			for(auto p : svg_data_) {

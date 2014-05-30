@@ -46,8 +46,11 @@ namespace KRE
 			virtual ~container();
 		protected:
 			void render_children(render_context& ctx) const;
+			void clip_render_children(render_context& ctx) const;
 		private:
+			virtual void handle_resolve();
 			virtual void handle_render(render_context& ctx) const override;
+			virtual void handle_clip_render(render_context& ctx) const override;
 			element_ptr handle_find_child(const std::string& id) const override;
 
 			// Shape/Structural/Gradient elements
@@ -60,7 +63,8 @@ namespace KRE
 			svg(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~svg();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 
 			std::string version_;
 			std::string base_profile_;
@@ -78,7 +82,8 @@ namespace KRE
 			symbol(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~symbol();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 		};
 
 		class group : public container
@@ -87,7 +92,8 @@ namespace KRE
 			group(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~group();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 		};
 
 		class clip_path : public container
@@ -96,7 +102,9 @@ namespace KRE
 			clip_path(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~clip_path();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 		};
 
 		// Used only for looking up child elements. Not rendered directly.
@@ -106,7 +114,8 @@ namespace KRE
 			defs(element* parent, const boost::property_tree::ptree& pt);
 			virtual ~defs();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 		};
 	}
 }

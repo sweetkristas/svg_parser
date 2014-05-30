@@ -36,39 +36,41 @@ namespace KRE
 			opacity_(1.0),
 			opacity_set_(false)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-			auto opacity = attributes.get_child_optional("stop-opacity");
-			auto color = attributes.get_child_optional("stop-color");
-			auto offset = attributes.get_child_optional("offset");
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto opacity = attributes->get_child_optional("stop-opacity");
+				auto color = attributes->get_child_optional("stop-color");
+				auto offset = attributes->get_child_optional("offset");
 
-			if(opacity) {
-				opacity_set_ = true;
-				const std::string alpha = opacity->data();
-				try {
-					opacity_ = boost::lexical_cast<double>(alpha);
-				} catch(const boost::bad_lexical_cast&) {
-					ASSERT_LOG(false, "Couldn't convert opacity value to number: " << alpha);
-				}
-			}
-
-			if(color) {
-				color_ = paint::from_string(color->data());
 				if(opacity) {
-					color_->set_opacity(opacity_);
+					opacity_set_ = true;
+					const std::string alpha = opacity->data();
+					try {
+						opacity_ = boost::lexical_cast<double>(alpha);
+					} catch(const boost::bad_lexical_cast&) {
+						ASSERT_LOG(false, "Couldn't convert opacity value to number: " << alpha);
+					}
 				}
-			}
 
-			ASSERT_LOG(!offset, "No offset field given in gradient color stop");
-			const std::string offs = offset->data();
-			try {
-				offset_ = boost::lexical_cast<double>(offs);
-			} catch(const boost::bad_lexical_cast&) {
-				ASSERT_LOG(false, "Couldn't convert opacity value to number: " << offs);
+				if(color) {
+					color_ = paint::from_string(color->data());
+					if(opacity) {
+						color_->set_opacity(opacity_);
+					}
+				}
+
+				ASSERT_LOG(!offset, "No offset field given in gradient color stop");
+				const std::string offs = offset->data();
+				try {
+					offset_ = boost::lexical_cast<double>(offs);
+				} catch(const boost::bad_lexical_cast&) {
+					ASSERT_LOG(false, "Couldn't convert opacity value to number: " << offs);
+				}
+				if(offs.find('%') != std::string::npos) {
+					offset_ /= 100.0;
+				}
+				offset_ = std::max(std::min(offset_, 1.0), 0.0);
 			}
-			if(offs.find('%') != std::string::npos) {
-				offset_ /= 100.0;
-			}
-			offset_ = std::max(std::min(offset_, 1.0), 0.0);
 		}
 
 		gradient_stop::~gradient_stop()
@@ -103,51 +105,53 @@ namespace KRE
 			spread_(GradientSpreadMethod::PAD)
 		{
 			// Process attributes
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-			auto xlink_href = attributes.get_child_optional("xlink:xref");
-			auto transforms = attributes.get_child_optional("gradientTransforms");
-			auto units = attributes.get_child_optional("gradientUnits");
-			auto spread = attributes.get_child_optional("spreadMethod");
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto xlink_href = attributes->get_child_optional("xlink:xref");
+				auto transforms = attributes->get_child_optional("gradientTransforms");
+				auto units = attributes->get_child_optional("gradientUnits");
+				auto spread = attributes->get_child_optional("spreadMethod");
 
-			if(transforms) {
-				transforms_ = transform::factory(transforms->data());
-			}
-			if(xlink_href) {
-				xlink_href_ = xlink_href->data();
-			}
-			if(units) {
-				std::string csystem = units->data();
-				if(csystem == "userSpaceOnUse") {
-					coord_system_ = GradientCoordSystem::USERSPACE_ON_USE;
-				} else if(csystem =="objectBoundingBox") {
-					coord_system_ = GradientCoordSystem::OBJECT_BOUNDING_BOX;
-				} else {
-					ASSERT_LOG(false, "Unrecognised 'gradientUnits' value: " << csystem);
+				if(transforms) {
+					transforms_ = transform::factory(transforms->data());
 				}
-			}
-			if(spread) {
-				std::string spread_val = units->data();
-				if(spread_val == "pad") {
-					spread_ = GradientSpreadMethod::PAD;
-				} else if(spread_val =="reflect") {
-					spread_ = GradientSpreadMethod::REFLECT;
-				} else if(spread_val =="repeat") {
-					spread_ = GradientSpreadMethod::REPEAT;
-				} else {
-					ASSERT_LOG(false, "Unrecognised 'spreadMethod' value: " << spread_val);
+				if(xlink_href) {
+					xlink_href_ = xlink_href->data();
 				}
-			}
+				if(units) {
+					std::string csystem = units->data();
+					if(csystem == "userSpaceOnUse") {
+						coord_system_ = GradientCoordSystem::USERSPACE_ON_USE;
+					} else if(csystem =="objectBoundingBox") {
+						coord_system_ = GradientCoordSystem::OBJECT_BOUNDING_BOX;
+					} else {
+						ASSERT_LOG(false, "Unrecognised 'gradientUnits' value: " << csystem);
+					}
+				}
+				if(spread) {
+					std::string spread_val = units->data();
+					if(spread_val == "pad") {
+						spread_ = GradientSpreadMethod::PAD;
+					} else if(spread_val =="reflect") {
+						spread_ = GradientSpreadMethod::REFLECT;
+					} else if(spread_val =="repeat") {
+						spread_ = GradientSpreadMethod::REPEAT;
+					} else {
+						ASSERT_LOG(false, "Unrecognised 'spreadMethod' value: " << spread_val);
+					}
+				}
 
-			// Process child elements
-			for(auto& v : pt) {
-				if(v.first == "stop") {
-					stops_.emplace_back(new gradient_stop(doc, v.second));
-				} else if(v.first == "<xmlattr>") {
-					// ignore
-				} else if(v.first == "<xmlcomment>") {
-					// ignore
-				} else {
-					ASSERT_LOG(false, "unexpected child element in gradient stop list: " << v.first);
+				// Process child elements
+				for(auto& v : pt) {
+					if(v.first == "stop") {
+						stops_.emplace_back(new gradient_stop(doc, v.second));
+					} else if(v.first == "<xmlattr>") {
+						// ignore
+					} else if(v.first == "<xmlcomment>") {
+						// ignore
+					} else {
+						ASSERT_LOG(false, "unexpected child element in gradient stop list: " << v.first);
+					}
 				}
 			}
 		}
@@ -181,22 +185,24 @@ namespace KRE
 		linear_gradient::linear_gradient(element* doc, const ptree& pt)
 			: gradient(doc, pt)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-			auto x1 = attributes.get_child_optional("x1");
-			auto y1 = attributes.get_child_optional("y1");
-			auto x2 = attributes.get_child_optional("x2");
-			auto y2 = attributes.get_child_optional("y2");
-			if(x1) {
-				x1_.from_string(x1->data());
-			}
-			if(y1) {
-				y1_.from_string(y1->data());
-			}
-			if(x2) {
-				x2_.from_string(x2->data());
-			}
-			if(y2) {
-				y2_.from_string(y2->data());
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto x1 = attributes->get_child_optional("x1");
+				auto y1 = attributes->get_child_optional("y1");
+				auto x2 = attributes->get_child_optional("x2");
+				auto y2 = attributes->get_child_optional("y2");
+				if(x1) {
+					x1_.from_string(x1->data());
+				}
+				if(y1) {
+					y1_.from_string(y1->data());
+				}
+				if(x2) {
+					x2_.from_string(x2->data());
+				}
+				if(y2) {
+					y2_.from_string(y2->data());
+				}
 			}
 		}
 
@@ -223,26 +229,28 @@ namespace KRE
 		radial_gradient::radial_gradient(element* doc, const ptree& pt)
 			: gradient(doc, pt)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-			auto cx = attributes.get_child_optional("cx");
-			auto cy = attributes.get_child_optional("cy");
-			auto radius = attributes.get_child_optional("r");
-			auto fx = attributes.get_child_optional("fx");
-			auto fy = attributes.get_child_optional("fy");
-			if(cx) {
-				cx_.from_string(cx->data());
-			}
-			if(cy) {
-				cy_.from_string(cy->data());
-			}
-			if(radius) {
-				r_.from_string(radius->data());
-			}
-			if(fx) {
-				fx_.from_string(fx->data());
-			}
-			if(fy) {
-				fy_.from_string(fy->data());
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto cx = attributes->get_child_optional("cx");
+				auto cy = attributes->get_child_optional("cy");
+				auto radius = attributes->get_child_optional("r");
+				auto fx = attributes->get_child_optional("fx");
+				auto fy = attributes->get_child_optional("fy");
+				if(cx) {
+					cx_.from_string(cx->data());
+				}
+				if(cy) {
+					cy_.from_string(cy->data());
+				}
+				if(radius) {
+					r_.from_string(radius->data());
+				}
+				if(fx) {
+					fx_.from_string(fx->data());
+				}
+				if(fy) {
+					fy_.from_string(fy->data());
+				}
 			}
 		}
 

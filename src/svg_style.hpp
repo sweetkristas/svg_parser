@@ -21,6 +21,8 @@
 	   distribution.
 */
 
+#pragma once
+
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 #include <vector>
@@ -30,6 +32,7 @@
 #include "svg_paint.hpp"
 #include "svg_render.hpp"
 #include "uri.hpp"
+#include "utils.hpp"
 
 namespace KRE
 {
@@ -42,6 +45,9 @@ namespace KRE
 			virtual ~base_attrib() {}
 			virtual void apply(render_context& ctx) const = 0;
 			virtual void clear(render_context& ctx) const = 0;
+			virtual void resolve(const element* doc) = 0;
+		private:
+			DISALLOW_COPY_AND_ASSIGN(base_attrib);
 		};
 
 		class attribute_manager
@@ -135,6 +141,7 @@ namespace KRE
 			virtual ~font_attribs();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
+			void resolve(const element* doc) override;
 		private:
 			std::vector<std::string> family_;
 			FontStyle style_;
@@ -254,6 +261,7 @@ namespace KRE
 			virtual ~text_attribs();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
+			void resolve(const element* doc) override;
 		private:
 			TextDirection direction_;
 			UnicodeBidi bidi_;
@@ -351,6 +359,7 @@ namespace KRE
 			virtual ~visual_attribs();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
+			void resolve(const element* doc) override;
 		private:
 			Overflow overflow_;
 			Clip clip_;
@@ -394,9 +403,11 @@ namespace KRE
 			virtual ~clipping_attribs();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
+			void resolve(const element* doc) override;
 		private:
 			FuncIriValue path_;
 			std::string path_ref_;
+			element_ptr path_resolved_;
 			ClipRule rule_;
 			FuncIriValue mask_;
 			std::string mask_ref_;
@@ -418,6 +429,7 @@ namespace KRE
 			virtual ~filter_effect_attribs();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
+			void resolve(const element* doc) override;
 		private:
 			Background enable_background_;
 			// if enable_background_==NEW these contain the co-ordinates specified.
@@ -530,6 +542,7 @@ namespace KRE
 			virtual ~painting_properties();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
+			void resolve(const element* doc) override;
 		private:
 			// default none
 			paint_ptr stroke_;
@@ -583,6 +596,7 @@ namespace KRE
 			virtual ~marker_attribs();
 			void apply(render_context& ctx) const override;
 			void clear(render_context& ctx) const override;
+			void resolve(const element* doc) override;
 		private:
 			FuncIriValue start_;
 			uri::uri start_iri_;

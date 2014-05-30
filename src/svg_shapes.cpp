@@ -75,19 +75,23 @@ namespace KRE
 
 		void shape::handle_render(render_context& ctx) const 
 		{
-			attribute_manager pp1(pp(), ctx);
 			render_path(ctx);
+		}
+
+		void shape::handle_clip_render(render_context& ctx) const
+		{
+			// XXX
 		}
 
 		void shape::stroke_and_fill(render_context& ctx) const
 		{
-			auto sc = ctx.stroke_color_top();
-			if(sc && sc->apply(parent(), ctx)) {
-				cairo_stroke_preserve(ctx.cairo());
-			}
 			auto fc = ctx.fill_color_top();
 			if(fc && fc->apply(parent(), ctx)) {
-				cairo_fill(ctx.cairo());
+				cairo_fill_preserve(ctx.cairo());
+			}
+			auto sc = ctx.stroke_color_top();
+			if(sc && sc->apply(parent(), ctx)) {
+				cairo_stroke(ctx.cairo());
 			}
 		}
 
@@ -102,8 +106,19 @@ namespace KRE
 				for(auto p : path_) {
 					p->cairo_render(path_ctx);
 				}
+				stroke_and_fill(ctx);
 			}
-			stroke_and_fill(ctx);
+		}
+
+		void shape::clip_render_path(render_context& ctx) const
+		{
+			if(!path_.empty()) {
+				path_cmd_context path_ctx(ctx.cairo());
+				for(auto p : path_) {
+					p->cairo_render(path_ctx);
+				}
+				cairo_clip(ctx.cairo());
+			}
 		}
 
 		// list_of here is a hack because MSVC doesn't support C++11 initialiser_lists
@@ -136,20 +151,29 @@ namespace KRE
 		circle::~circle() 
 		{
 		}
-		
-		void circle::handle_render(render_context& ctx) const 
-		{
 
+		void circle::render_circle(render_context& ctx) const
+		{
 			double cx = cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double cy = cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double r  = radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			cairo_arc(ctx.cairo(), cx, cy, r, 0.0, 2 * M_PI);
-
-			attribute_manager pp1(pp(), ctx);
+		}
+		
+		void circle::handle_render(render_context& ctx) const 
+		{
+			render_circle(ctx);
 			stroke_and_fill(ctx);
-
 			shape::render_path(ctx);
 		}
+
+		void circle::handle_clip_render(render_context& ctx) const
+		{
+			render_circle(ctx);
+			cairo_clip(ctx.cairo());
+			shape::clip_render_path(ctx);
+		}
+
 
 		ellipse::ellipse(element* doc, const ptree& pt)
 			: shape(doc, pt),
@@ -158,22 +182,24 @@ namespace KRE
 			rx_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
 			ry_(0, svg_length::SVG_LENGTHTYPE_NUMBER)
 		{
-			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
-            auto cx = attributes.get_child_optional("cx");
-            if(cx) {
-				cx_ = svg_length(cx->data());
-			}
-            auto cy = attributes.get_child_optional("cy");
-            if(cy) {
-				cy_ = svg_length(cy->data());
-			}
-            auto rx = attributes.get_child_optional("rx");
-            if(rx) {
-				rx_ = svg_length(rx->data());
-			}
-            auto ry = attributes.get_child_optional("ry");
-            if(ry) {
-				ry_ = svg_length(ry->data());
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto cx = attributes->get_child_optional("cx");
+				if(cx) {
+					cx_ = svg_length(cx->data());
+				}
+				auto cy = attributes->get_child_optional("cy");
+				if(cy) {
+					cy_ = svg_length(cy->data());
+				}
+				auto rx = attributes->get_child_optional("rx");
+				if(rx) {
+					rx_ = svg_length(rx->data());
+				}
+				auto ry = attributes->get_child_optional("ry");
+				if(ry) {
+					ry_ = svg_length(ry->data());
+				}
 			}
 		}
 
@@ -198,37 +224,56 @@ namespace KRE
 			shape::render_path(ctx);
 		}
 
+		void ellipse::handle_clip_render(render_context& ctx) const
+		{
+			double cx = cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double cy = cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double rx = rx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			double ry = ry_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+
+			cairo_save(ctx.cairo());
+			cairo_translate(ctx.cairo(), cx+rx, cy+ry);
+			cairo_scale(ctx.cairo(), rx, ry);
+			cairo_arc_negative(ctx.cairo(), 0.0, 0.0, 1.0, 0.0, 2*M_PI);
+			cairo_clip(ctx.cairo());	// XXX this may not be correct, since cairo_restore will kill the clip-path
+			cairo_restore(ctx.cairo());
+
+			shape::clip_render_path(ctx);
+		}
+
 		rectangle::rectangle(element* doc, const ptree& pt) 
 			: shape(doc, pt), 
 			is_rounded_(false) 
 		{
-			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
-            auto x = attributes.get_child_optional("x");
-			if(x) {
-				x_ = svg_length(x->data());
-			}
-            auto y = attributes.get_child_optional("y");
-			if(y) {
-				y_ = svg_length(y->data());
-			}
-            auto w = attributes.get_child_optional("width");
-			if(w) {
-				width_ = svg_length(w->data());
-			}
-            auto h = attributes.get_child_optional("height");
-			if(h) {
-				height_ = svg_length(h->data());
-			}
-            auto rx = attributes.get_child_optional("rx");
-			if(rx) {
-				rx_ = svg_length(rx->data());
-			}
-            auto ry = attributes.get_child_optional("ry");
-			if(ry) {
-				ry_ = svg_length(ry->data());
-			}
-			if(rx || ry) {
-				is_rounded_ = true;
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto x = attributes->get_child_optional("x");
+				if(x) {
+					x_ = svg_length(x->data());
+				}
+				auto y = attributes->get_child_optional("y");
+				if(y) {
+					y_ = svg_length(y->data());
+				}
+				auto w = attributes->get_child_optional("width");
+				if(w) {
+					width_ = svg_length(w->data());
+				}
+				auto h = attributes->get_child_optional("height");
+				if(h) {
+					height_ = svg_length(h->data());
+				}
+				auto rx = attributes->get_child_optional("rx");
+				if(rx) {
+					rx_ = svg_length(rx->data());
+				}
+				auto ry = attributes->get_child_optional("ry");
+				if(ry) {
+					ry_ = svg_length(ry->data());
+				}
+				if(rx || ry) {
+					is_rounded_ = true;
+				}
 			}
 		}
 
@@ -236,7 +281,7 @@ namespace KRE
 		{
 		}
 
-		void rectangle::handle_render(render_context& ctx) const 
+		void rectangle::render_rectangle(render_context& ctx) const
 		{
 			ASSERT_LOG(is_rounded_ == false, "XXX we don't support rounded rectangles -- yet");
 			double x = x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
@@ -247,18 +292,31 @@ namespace KRE
 			double h  = height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 
 			cairo_rectangle(ctx.cairo(), x, y, w, h);
-			stroke_and_fill(ctx);
+		}
 
+		void rectangle::handle_render(render_context& ctx) const 
+		{
+			render_rectangle(ctx);
+			stroke_and_fill(ctx);
 			shape::render_path(ctx);
+		}
+
+		void rectangle::handle_clip_render(render_context& ctx) const
+		{
+			render_rectangle(ctx);
+			cairo_clip(ctx.cairo());
+			shape::clip_render_path(ctx);
 		}
 
 		polygon::polygon(element* doc, const ptree& pt) 
 			: shape(doc, pt)
 		{
-			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
-            auto points = attributes.get_child_optional("points");
-			if(points) {
-				points_ = create_point_list(points->data());
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto points = attributes->get_child_optional("points");
+				if(points) {
+					points_ = create_point_list(points->data());
+				}
 			}
 		}
 
@@ -266,7 +324,7 @@ namespace KRE
 		{
 		}
 
-		void polygon::handle_render(render_context& ctx) const 
+		void polygon::render_polygon(render_context& ctx) const
 		{
 			auto it = points_.begin();
 			cairo_move_to(ctx.cairo(), 
@@ -279,9 +337,20 @@ namespace KRE
 				++it;
 			}
 			cairo_close_path(ctx.cairo());
-			stroke_and_fill(ctx);
+		}
 
+		void polygon::handle_render(render_context& ctx) const 
+		{
+			render_polygon(ctx);
+			stroke_and_fill(ctx);
 			shape::render_path(ctx);
+		}
+
+		void polygon::handle_clip_render(render_context& ctx) const
+		{
+			render_polygon(ctx);
+			cairo_clip(ctx.cairo());
+			shape::clip_render_path(ctx);
 		}
 
 		text::text(element* doc, const ptree& pt) 
@@ -291,39 +360,41 @@ namespace KRE
 			// XXX should we use provided <xmltext> instead?
 			text_ = pt.get_value<std::string>();
 
-			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
-            auto x = attributes.get_child_optional("x");
-			if(x) {
-				//x_ = svg_length(x->data());
-			}
-            auto y = attributes.get_child_optional("y");
-			if(y) {
-				//y_ = svg_length(y->data());
-			}
-            auto dx = attributes.get_child_optional("dx");
-			if(dx) {
-				//dx_ = svg_length(dx->data());
-			}
-            auto dy = attributes.get_child_optional("dy");
-			if(dy) {
-				//dy_ = svg_length(dy->data());
-			}
-            auto rotate = attributes.get_child_optional("rotate");
-			if(rotate) {
-				//rotate_ = svg_length(rotate->data());
-			}
-            auto text_length = attributes.get_child_optional("textLength");
-			if(text_length) {
-				//text_length_ = svg_length(text_length->data());
-			}
-            auto length_adjust = attributes.get_child_optional("lengthAdjust");
-			if(length_adjust) {
-				if(length_adjust->data() == "spacing") {
-					adjust_ = LengthAdjust::SPACING;
-				} else if(length_adjust->data() == "spacingAndGlyphs") {
-					adjust_ = LengthAdjust::SPACING_AND_GLYPHS;
-				} else {
-					ASSERT_LOG(false, "Unrecognised spacing value: " << length_adjust->data());
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto x = attributes->get_child_optional("x");
+				if(x) {
+					//x_ = svg_length(x->data());
+				}
+				auto y = attributes->get_child_optional("y");
+				if(y) {
+					//y_ = svg_length(y->data());
+				}
+				auto dx = attributes->get_child_optional("dx");
+				if(dx) {
+					//dx_ = svg_length(dx->data());
+				}
+				auto dy = attributes->get_child_optional("dy");
+				if(dy) {
+					//dy_ = svg_length(dy->data());
+				}
+				auto rotate = attributes->get_child_optional("rotate");
+				if(rotate) {
+					//rotate_ = svg_length(rotate->data());
+				}
+				auto text_length = attributes->get_child_optional("textLength");
+				if(text_length) {
+					//text_length_ = svg_length(text_length->data());
+				}
+				auto length_adjust = attributes->get_child_optional("lengthAdjust");
+				if(length_adjust) {
+					if(length_adjust->data() == "spacing") {
+						adjust_ = LengthAdjust::SPACING;
+					} else if(length_adjust->data() == "spacingAndGlyphs") {
+						adjust_ = LengthAdjust::SPACING_AND_GLYPHS;
+					} else {
+						ASSERT_LOG(false, "Unrecognised spacing value: " << length_adjust->data());
+					}
 				}
 			}
 		}
@@ -332,7 +403,7 @@ namespace KRE
 		{
 		}
 
-		void text::handle_render(render_context& ctx) const 
+		void text::render_text(render_context& ctx) const
 		{
 			/// need parent value.
 			/*double letter_spacing = GetFontProperties().get_letter_spacing(0);
@@ -347,7 +418,19 @@ namespace KRE
 			}*/
 			ASSERT_LOG(false, "XXX: fixme text::handle_render");
 
+		}
+
+		void text::handle_render(render_context& ctx) const 
+		{
+			render_text(ctx);
 			shape::render_path(ctx);
+		}
+
+		void text::handle_clip_render(render_context& ctx) const
+		{
+			render_text(ctx);
+			cairo_clip(ctx.cairo());
+			shape::clip_render_path(ctx);
 		}
 
 		line::line(element* doc, const ptree& pt)
@@ -357,22 +440,24 @@ namespace KRE
 			x2_(0, svg_length::SVG_LENGTHTYPE_NUMBER),
 			y2_(0, svg_length::SVG_LENGTHTYPE_NUMBER)
 		{
-			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
-            auto x1 = attributes.get_child_optional("x1");
-			if(x1) {
-				x1_ = svg_length(x1->data());
-			}
-            auto y1 = attributes.get_child_optional("y1");
-			if(y1) {
-				y1_ = svg_length(y1->data());
-			}
-            auto x2 = attributes.get_child_optional("x2");
-			if(x2) {
-				x2_ = svg_length(x2->data());
-			}
-            auto y2 = attributes.get_child_optional("y2");
-			if(y2) {
-				y2_ = svg_length(y2->data());
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto x1 = attributes->get_child_optional("x1");
+				if(x1) {
+					x1_ = svg_length(x1->data());
+				}
+				auto y1 = attributes->get_child_optional("y1");
+				if(y1) {
+					y1_ = svg_length(y1->data());
+				}
+				auto x2 = attributes->get_child_optional("x2");
+				if(x2) {
+					x2_ = svg_length(x2->data());
+				}
+				auto y2 = attributes->get_child_optional("y2");
+				if(y2) {
+					y2_ = svg_length(y2->data());
+				}
 			}
 		}
 
@@ -380,7 +465,7 @@ namespace KRE
 		{
 		}
 
-		void line::handle_render(render_context& ctx) const
+		void line::render_line(render_context& ctx) const
 		{
 			double x1 = x1_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double y1 = y1_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
@@ -389,16 +474,35 @@ namespace KRE
 			
 			cairo_move_to(ctx.cairo(), x1, y1);
 			cairo_line_to(ctx.cairo(), x2, y2);
-			stroke_and_fill(ctx); // XXX ?
+		}
+
+		void line::handle_render(render_context& ctx) const
+		{
+			render_line(ctx);
+			auto sc = ctx.stroke_color_top();
+			if(sc && sc->apply(parent(), ctx)) {
+				cairo_stroke(ctx.cairo());
+			}
+			shape::render_path(ctx);
+		}
+
+		void line::handle_clip_render(render_context& ctx) const
+		{
+			// XXX
+			render_line(ctx);
+			cairo_clip(ctx.cairo());
+			shape::clip_render_path(ctx);
 		}
 
 		polyline::polyline(element* doc, const ptree& pt)
 			: shape(doc,pt)
 		{
-			const ptree& attributes = pt.get_child("<xmlattr>", ptree());
-            auto points = attributes.get_child_optional("points");
-			if(points) {
-				points_ = create_point_list(points->data());
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto points = attributes->get_child_optional("points");
+				if(points) {
+					points_ = create_point_list(points->data());
+				}
 			}
 		}
 
@@ -406,7 +510,7 @@ namespace KRE
 		{
 		}
 
-		void polyline::handle_render(render_context& ctx) const
+		void polyline::render_polyline(render_context& ctx) const
 		{
 			bool is_first = true;
 			for(auto& p : points_) {
@@ -419,8 +523,20 @@ namespace KRE
 					cairo_line_to(ctx.cairo(), x, y);
 				}
 			}
+		}
+
+		void polyline::handle_render(render_context& ctx) const
+		{
+			render_polyline(ctx);
 			stroke_and_fill(ctx);
 			shape::render_path(ctx);
+		}
+
+		void polyline::handle_clip_render(render_context& ctx) const
+		{
+			render_polyline(ctx);
+			cairo_clip(ctx.cairo());
+			shape::clip_render_path(ctx);
 		}
 	}
 }

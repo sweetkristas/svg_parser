@@ -40,7 +40,7 @@ namespace KRE
 			marker_attribs_(pt),
 			font_attribs_(pt),
 			text_attribs_(pt),
-            parent_(parent),
+            parent_(parent == nullptr ? this : parent),
             external_resources_required_(false),
 			x_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
 			y_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
@@ -99,7 +99,8 @@ namespace KRE
 		{
 		}
 
-		void element::render(render_context& ctx) const {
+		void element::render(render_context& ctx) const 
+		{
 			// XXX Need to do some normalising of co-ordinates to the viewBox.
 			// XXX need to translate if x/y specified and use width/height from svg element if
 			// overriding -- well map them to ctx.width()/ctx.height()
@@ -109,8 +110,47 @@ namespace KRE
 			for(auto trf : transforms_) {
 				trf->apply(ctx);
 			}
+			attribute_manager pp1(pp(), ctx);
+			attribute_manager ca1(ca(), ctx);
 			handle_render(ctx);
 			cairo_restore(ctx.cairo());
+		}
+
+		void element::resolve()
+		{
+			// Resolve any references in attributes.
+			visual_attribs_.resolve(parent());
+			clipping_attribs_.resolve(parent());
+			filter_effect_attribs_.resolve(parent());
+			painting_properties_.resolve(parent());
+			marker_attribs_.resolve(parent());
+			font_attribs_.resolve(parent());
+			text_attribs_.resolve(parent());
+
+			// Call derived class to fix-up any things that need resolved
+			handle_resolve();
+		}
+
+		void element::handle_resolve()
+		{
+			// We provide a default which does nothing, overridable in base classes.
+		}
+
+		void element::clip(render_context& ctx) const
+		{
+			//attribute_manager pp1(pp(), ctx); <- this saves/restores cairo which kills the clipping path
+			// Will need to think of something else.
+			handle_clip(ctx);
+		}
+
+		void element::handle_clip(render_context& ctx) const
+		{
+			ASSERT_LOG(false, "handle_clip() called on non clip_path element");
+		}
+		
+		void element::clip_render(render_context& ctx) const
+		{
+			handle_clip_render(ctx);
 		}
 
         void element::apply_transforms(render_context& ctx) const
@@ -133,15 +173,17 @@ namespace KRE
 		use_element::use_element(element* parent, const ptree& pt)
 			: element(parent, pt)
 		{
-			const ptree & attributes = pt.get_child("<xmlattr>", ptree());
-            auto xlink_href = attributes.get_child_optional("xlink:href");
-			if(xlink_href) {
-				xlink_href_ = xlink_href->data();
-				if(!xlink_href_.empty()) {
-					if(xlink_href_[0] != '#') {
-						std::cerr << "Only supporting inter-document cross-references: " << xlink_href_ << std::endl;
-					} else {
-						xlink_href_ = xlink_href_.substr(1);
+			auto attributes = pt.get_child_optional("<xmlattr>");
+			if(attributes) {
+				auto xlink_href = attributes->get_child_optional("xlink:href");
+				if(xlink_href) {
+					xlink_href_ = xlink_href->data();
+					if(!xlink_href_.empty()) {
+						if(xlink_href_[0] != '#') {
+							std::cerr << "Only supporting inter-document cross-references: " << xlink_href_ << std::endl;
+						} else {
+							xlink_href_ = xlink_href_.substr(1);
+						}
 					}
 				}
 			}
@@ -151,9 +193,19 @@ namespace KRE
 		{
 		}
 
+		void use_element::handle_resolve()
+		{
+			auto s = parent()->find_child(xlink_href_);
+			if(s) {
+				xlink_ref_ = s;
+			} else {
+				std::cerr << "WARNING: Couldn't find element '" << xlink_href_ << "' in document." << std::endl;
+			}
+		}
+
 		void use_element::handle_render(render_context& ctx) const
 		{
-			if(xlink_href_.empty()) {
+			if(xlink_ref_ == NULL) {
 				return;
 			}
 
@@ -172,14 +224,14 @@ namespace KRE
 				auto tfr = transform::factory(TransformType::TRANSLATE,coords);
 				tfr->apply(ctx);
 			}
-			/// XXX search for xref_id_ in current svg document, then render it.
-			auto s = find_child(xlink_href_);
-			if(s) {
-				s->render(ctx);
-			} else {
-				std::cerr << "WARNING: Couldn't find element '" << xlink_href_ << "' in document." << std::endl;
-			}
+			xlink_ref_->render(ctx);
 		}
 
+		void use_element::handle_clip_render(render_context& ctx) const 
+		{
+			if(xlink_ref_) {
+				xlink_ref_->clip_render(ctx);
+			}
+		}
     }
 }

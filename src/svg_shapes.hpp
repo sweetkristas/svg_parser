@@ -42,9 +42,11 @@ namespace KRE
 			virtual ~shape();			
 		protected:
 			void render_path(render_context& ctx) const;
+			void clip_render_path(render_context& ctx) const;
 			void stroke_and_fill(render_context& ctx) const;
 		private:
 			virtual void handle_render(render_context& ctx) const override;
+			virtual void handle_clip_render(render_context& ctx) const override;
 			std::vector<path_commandPtr> path_;
 		};
 
@@ -54,7 +56,9 @@ namespace KRE
 			rectangle(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~rectangle();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void render_rectangle(render_context& ctx) const;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 			svg_length x_;
 			svg_length y_;
 			svg_length rx_;
@@ -70,7 +74,9 @@ namespace KRE
 			circle(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~circle();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void render_circle(render_context& ctx) const;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 			svg_length cx_;
 			svg_length cy_;
 			svg_length radius_;
@@ -82,7 +88,8 @@ namespace KRE
 			ellipse(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~ellipse();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 			svg_length cx_;
 			svg_length cy_;
 			svg_length rx_;
@@ -95,7 +102,9 @@ namespace KRE
 			line(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~line();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void render_line(render_context& ctx) const;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 			svg_length x1_;
 			svg_length y1_;
 			svg_length x2_;
@@ -108,7 +117,9 @@ namespace KRE
 			polyline(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~polyline();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void render_polyline(render_context& ctx) const;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 			point_list points_;
 		};
 
@@ -118,7 +129,9 @@ namespace KRE
 			polygon(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~polygon();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void render_polygon(render_context& ctx) const;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 			point_list points_;
 		};
 
@@ -128,7 +141,9 @@ namespace KRE
 			text(element* doc, const boost::property_tree::ptree& pt);
 			virtual ~text();
 		private:
-			virtual void handle_render(render_context& ctx) const override;
+			void render_text(render_context& ctx) const;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
 			std::string text_;
 			std::vector<svg_length> x_;
 			std::vector<svg_length> y_;

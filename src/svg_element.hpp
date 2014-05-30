@@ -72,6 +72,10 @@ namespace KRE
 
 			static element_ptr factory(element* parent, const boost::property_tree::ptree& svg_data);
 
+			void resolve();
+			void clip(render_context& ctx) const;
+			void clip_render(render_context& ctx) const;
+
 			const element* parent() const { return parent_; }
 		protected:
 			const visual_attribs* va() const { return &visual_attribs_; }
@@ -85,7 +89,11 @@ namespace KRE
 			DISALLOW_COPY_ASSIGN_AND_DEFAULT(element);
 
 			virtual void handle_render(render_context& ctx) const = 0;
+			//virtual void handle_clip(render_context& ctx) const = 0;
 			virtual element_ptr handle_find_child(const std::string& id) const { return element_ptr(); }
+			virtual void handle_resolve();
+			virtual void handle_clip(render_context& ctx) const;
+			virtual void handle_clip_render(render_context& ctx) const = 0;
 
 			// top level parent element. if NULL then this is the top level element.
 			element* parent_;
@@ -105,10 +113,6 @@ namespace KRE
 			// std::string style_;
 			bool external_resources_required_;
 
-			// IRI reference to clip-path to be used for drawing.
-			// Only relevant for container and graphics elements.
-			std::string clip_path_ref_;
-
 			svg_length x_;
 			svg_length y_;
 			svg_length width_;
@@ -125,8 +129,11 @@ namespace KRE
 			virtual ~use_element();
 		private:
 			DISALLOW_COPY_ASSIGN_AND_DEFAULT(use_element);
-			virtual void handle_render(render_context& ctx) const override;
+			void handle_render(render_context& ctx) const override;
+			void handle_clip_render(render_context& ctx) const override;
+			void handle_resolve() override;
 			std::string xlink_href_;
+			element_ptr xlink_ref_;
 		};
 
 	}
