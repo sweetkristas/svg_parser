@@ -165,6 +165,7 @@ namespace KRE
 				cairo_set_source_rgb(ctx.cairo(), color_value_.r(), color_value_.g(), color_value_.b());
 				return true;
 			}
+			return false;
 		}
 
 		paint_ptr paint::from_string(const std::string& s)
