@@ -46,7 +46,7 @@ namespace KRE
 			y_(0,svg_length::SVG_LENGTHTYPE_NUMBER),
 			width_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE),
 			height_(100,svg_length::SVG_LENGTHTYPE_PERCENTAGE),
-			view_box_(0.0,0.0,512.0,512.0)
+			view_box_(0.0,0.0,0.0,0.0)
 		{
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
@@ -106,7 +106,9 @@ namespace KRE
 			// overriding -- well map them to ctx.width()/ctx.height()
 			// XXX also need to process preserveAspectRatio value.
 			cairo_save(ctx.cairo());
-			cairo_scale(ctx.cairo(), ctx.width()/view_box_.w(), ctx.height()/view_box_.h());
+			if(view_box_.w() != 0 && view_box_.h() != 0) {
+				cairo_scale(ctx.cairo(), ctx.width()/view_box_.w(), ctx.height()/view_box_.h());
+			}
 			for(auto trf : transforms_) {
 				trf->apply(ctx);
 			}
@@ -196,6 +198,10 @@ namespace KRE
 
 		void use_element::handle_resolve()
 		{
+			if(xlink_href_.empty()) {
+				return;
+			}
+
 			auto s = parent()->find_child(xlink_href_);
 			if(s) {
 				xlink_ref_ = s;
