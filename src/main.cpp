@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 
 		auto tex_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 		SDL_SetRenderDrawColor(renderer_, 0x2b, 0x22, 0, 255);
-		if(SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND) != 0) {
+		if(SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE) != 0) {
 			ASSERT_LOG(false, "Unable to set blend mode: " << SDL_GetError());
 		}
 		SDL_UpdateTexture(tex_, NULL, cairo_image_surface_get_data(surface), cairo_image_surface_get_stride(surface));

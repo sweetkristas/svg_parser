@@ -163,7 +163,8 @@ namespace KRE
 				// XXX: Nothing to do?
 				return true;
 			case ColorAttrib::VALUE:
-				cairo_set_source_rgb(ctx.cairo(), color_value_.r(), color_value_.g(), color_value_.b());
+				double opacity = ctx.opacity_top();
+				cairo_set_source_rgba(ctx.cairo(), color_value_.r(), color_value_.g(), color_value_.b(), opacity);
 				return true;
 			}
 			return false;
