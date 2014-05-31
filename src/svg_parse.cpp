@@ -87,7 +87,7 @@ namespace KRE
 			cairo_set_fill_rule(ctx.cairo(), CAIRO_FILL_RULE_WINDING);
 			cairo_set_line_width(ctx.cairo(), 1.0);
 			ctx.fill_color_push(paint_ptr(new paint(0,0,0,255)));
-			ctx.stroke_color_push(paint_ptr(new paint(0,0,0,0)));
+			ctx.stroke_color_push(paint_ptr(new paint()));
 			ctx.opacity_push(1.0);
 			ctx.letter_spacing_push(0);
 

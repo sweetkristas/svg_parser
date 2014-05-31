@@ -115,6 +115,8 @@ namespace KRE
 			if(sc && sc->apply(parent(), ctx)) {
 				cairo_stroke(ctx.cairo());
 			}
+			// Clear the current path, regardless
+			cairo_new_path(ctx.cairo());
 		}
 
 		void shape::render_path(render_context& ctx) const 
