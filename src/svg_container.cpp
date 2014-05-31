@@ -202,8 +202,6 @@ namespace KRE
 
 		void group::handle_render(render_context& ctx) const
 		{
-			std::cerr << "group::handle_render" << std::endl;
-			attribute_manager pp1(pp(), ctx);
 			render_children(ctx);
 		}
 
