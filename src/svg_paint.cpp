@@ -59,7 +59,8 @@ namespace KRE
 		paint::paint(int r, int g, int b, int a)
 			: color_attrib_(ColorAttrib::VALUE),
 			backup_color_attrib_(ColorAttrib::NONE),
-			opacity_(1.0)
+			opacity_(1.0),
+			color_value_(r, g, b, a)
 		{
 		}
 
