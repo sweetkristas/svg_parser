@@ -207,45 +207,74 @@ namespace KRE
 		{
 		}
 
-		font_attribs::font_attribs(const std::vector<std::string>& family, 
-			FontStyle style,
-			FontVariant variant,
-			FontWeight weight,
-			FontStretch stretch,
-			double size,
-			double size_adjust)
-			: family_(family),
-			style_(style),
-			variant_(variant),
-			weight_(weight),
-			stretch_(stretch),
-			size_value_impl_(size),
-			size_adjust_value_impl_(size_adjust)
-		{
-			ASSERT_LOG(style_ == FontStyle::NORMAL || style_ == FontStyle::ITALIC || style_ == FontStyle::OBLIQUE,
-				"font_attribs: style must given as a concrete value.");
-			// XXX
-		}
-
-		font_attribs::font_attribs(render_context& ctx, const font_attribs& fa)
-		{
-			// XXX todo
-		}
-
-
 		void font_attribs::apply(render_context& ctx) const
 		{
-			// XXX
+			// XXX we really should move to cairo_ft_font_face_create_for_ft_face(...)
+			if(family_.size() > 0 
+				|| (style_ != FontStyle::INHERIT && style_ != FontStyle::UNSET) 
+				|| (weight_ != FontWeight::UNSET && weight_ != FontWeight::INHERIT)) {
+				std::string family;
+				cairo_font_slant_t slant; 
+				cairo_font_weight_t weight;
+				ctx.fa().top_font_face(&family, &slant, &weight);
+
+				// XXX This code is broken since we aren't processing BOLDER/LIGHTER etc but then cairo only supports
+				// bold and normal in the toy api. Fix this when we move to freetype.
+				slant = style_ == FontStyle::OBLIQUE
+					? CAIRO_FONT_SLANT_OBLIQUE 
+					: style_ == FontStyle::ITALIC ? CAIRO_FONT_SLANT_ITALIC : CAIRO_FONT_SLANT_NORMAL;
+
+				weight = weight_ >= FontWeight::WEIGHT_400 ? CAIRO_FONT_WEIGHT_BOLD : CAIRO_FONT_WEIGHT_NORMAL;
+				if(family_.size() > 0) {
+					family = family_[0];
+				}
+				
+				cairo_select_font_face(ctx.cairo(), family.c_str(), slant, weight);
+				ctx.fa().push_font_face(family, slant, weight);
+			}
+			double size = 0;
+			switch(size_)
+			{
+			case FontSize::UNSET:		/* do nothing */ break;
+			case FontSize::INHERIT:		/* do nothing */ break;
+			case FontSize::XX_SMALL:	size = 6.9; break;
+			case FontSize::X_SMALL:		size = 8.3; break;
+			case FontSize::SMALL:		size = 10; break;
+			case FontSize::MEDIUM:		size = 12; break;
+			case FontSize::LARGE:		size = 14.4; break;
+			case FontSize::X_LARGE:		size = 17.3; break;
+			case FontSize::XX_LARGE:	size = 20.7; break;
+			case FontSize::LARGER:		size = ctx.fa().top_font_size() * 1.2; break;
+			case FontSize::SMALLER:		size = ctx.fa().top_font_size() / 1.2; break;
+			case FontSize::VALUE:
+				size = size_value_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+				break;
+			default: break;
+			}
+			if(size > 0) {
+				ctx.fa().push_font_size(size);
+				cairo_set_font_size(ctx.cairo(), size);
+			}
+			// XXX use font_size_adjust if defined to scale the height of X in the chosen font to the given value.
+			// seems rather annoyingly all-in-all.
 		}
 
 		void font_attribs::clear(render_context& ctx) const
 		{
 			// XXX
+			if(size_ != FontSize::UNSET && size_ != FontSize::INHERIT) {
+				ctx.fa().pop_font_size();
+			}
+			if(family_.size() > 0 
+				|| (style_ != FontStyle::INHERIT && style_ != FontStyle::UNSET) 
+				|| (weight_ != FontWeight::UNSET && weight_ != FontWeight::INHERIT)) {
+				ctx.fa().pop_font_face();
+			}
 		}
 
 		void font_attribs::resolve(const element* doc)
 		{
-			// XXX
+			// nothing need be done
 		}
 
 		text_attribs::text_attribs(const ptree& pt)

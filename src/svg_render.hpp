@@ -36,8 +36,41 @@ namespace KRE
 		class paint;
 		typedef std::shared_ptr<paint> paint_ptr;
 
-		class text_attribs;
-		typedef std::shared_ptr<text_attribs> text_attribs_ptr;
+		// Basically the concrete values that are set and stacked.
+		class font_attribs_set 
+		{
+		private:
+			struct font_face {
+				std::string name;
+				cairo_font_slant_t slant;	// FontStyle
+				cairo_font_weight_t weight;	// FontWeight
+			};
+		public:
+			font_attribs_set() {}
+			~font_attribs_set() {}
+
+			void push_font_size(double size) { size_.push(size); }
+			void pop_font_size() { size_.pop(); }
+			double top_font_size() { return size_.top(); }
+
+			void push_font_face(const std::string& name, cairo_font_slant_t slant, cairo_font_weight_t weight) {
+				font_face ff;
+				ff.name = name;
+				ff.slant = slant;
+				ff.weight = weight;
+				face_.push(ff);
+			}
+			void pop_font_face() { face_.pop(); }
+			void top_font_face(std::string* name, cairo_font_slant_t* slant, cairo_font_weight_t* weight) {
+				ASSERT_LOG(name != NULL && slant != NULL && weight != NULL, "top_font_face: error in parameters. is null.");
+				*name = face_.top().name;
+				*slant = face_.top().slant;
+				*weight = face_.top().weight;
+			}
+		private:
+			std::stack<double> size_;
+			std::stack<font_face> face_;
+		};
 
 		class render_context
 		{
@@ -103,12 +136,15 @@ namespace KRE
 				letter_spacing_.pop();
 				return spacing;
 			}
+
+			font_attribs_set& fa() { return font_attributes_; }
 		private:
 			cairo_t* cairo_;
 			color_ptr current_color_;
 			std::stack<paint_ptr> fill_color_stack_;
 			std::stack<paint_ptr> stroke_color_stack_;
 			std::stack<double> opacity_stack_;
+			font_attribs_set font_attributes_;
 			unsigned width_;
 			unsigned height_;
 			/* All the text context to store -- XXX fixme come up with a more elegant solution
