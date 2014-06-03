@@ -132,7 +132,7 @@
   <ItemGroup>
     <Library Include="..\..\..\SDL\VisualC\SDL\Win32\Release\SDL2.lib" />
     <Library Include="..\..\..\SDL\VisualC\SDLmain\Win32\Release\SDL2main.lib" />
-    <Library Include="..\..\..\cairo\external\x86\lib\cairo.lib" />
+    <Library Include="..\..\external\lib\cairo.lib" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\geometry.inl">

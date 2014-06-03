@@ -52,9 +52,9 @@
     <ClInclude Include="..\..\src\utils.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\..\..\cairo\external\x86\lib\cairo.lib" />
     <Library Include="..\..\..\SDL\VisualC\SDLmain\Win32\Release\SDL2main.lib" />
     <Library Include="..\..\..\SDL\VisualC\SDL\Win32\Release\SDL2.lib" />
+    <Library Include="..\..\external\lib\cairo.lib" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\geometry.inl" />
@@ -101,7 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_USE_MATH_DEFINES=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Projects\cairo\external\x86\include\cairo;C:\Projects\SDL\include;C:\Projects\glm-0.9.4.3;c:\projects\boost\;C:\Projects\cairo\external\x86\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Projects\svg_parser\external\include;C:\Projects\SDL\include;C:\Projects\glm-0.9.4.3;c:\projects\boost\;C:\Projects\cairo\external\x86\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

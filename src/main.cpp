@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
-#include <cairo/cairo.h>
+#include <cairo.h>
 
 #include "asserts.hpp"
 #include "filesystem.hpp"
