@@ -21,6 +21,7 @@
 	   distribution.
 */
 
+#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 
@@ -181,6 +182,16 @@ namespace KRE
 					} else {
 						size_ = FontSize::VALUE;
 						size_value_ = svg_length(fs);
+					}
+				}
+
+				auto font_family = attributes->get_child_optional("font-family");
+				if(font_family) {
+					boost::char_separator<char> seperators("\n\t\r ,");
+					boost::tokenizer<boost::char_separator<char>> tok(font_family->data(), seperators);
+					for(auto& t : tok) {
+						family_.push_back(t);
+						boost::replace_all(family_.back(), "'", "");
 					}
 				}
 
