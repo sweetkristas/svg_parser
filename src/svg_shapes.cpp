@@ -425,6 +425,11 @@ namespace KRE
 
 		void text::render_text(render_context& ctx) const
 		{
+           auto fc = ctx.fill_color_top();
+            if(fc) {
+                fc->apply(parent(), ctx);
+            }
+
 			double letter_spacing = ctx.letter_spacing_top();
 			if(letter_spacing > 0) {
 				for(auto c : text_) {
