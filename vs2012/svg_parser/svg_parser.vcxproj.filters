@@ -18,46 +18,46 @@
     <ClCompile Include="..\..\src\filesystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_paint.cpp">
+    <ClCompile Include="..\..\src\svg\color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_shapes.cpp">
+    <ClCompile Include="..\..\src\svg\logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_element.cpp">
+    <ClCompile Include="..\..\src\svg\svg_attribs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_parse.cpp">
+    <ClCompile Include="..\..\src\svg\svg_container.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_path_parse.cpp">
+    <ClCompile Include="..\..\src\svg\svg_element.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_transform.cpp">
+    <ClCompile Include="..\..\src\svg\svg_gradient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_gradient.cpp">
+    <ClCompile Include="..\..\src\svg\svg_paint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_attribs.cpp">
+    <ClCompile Include="..\..\src\svg\svg_parse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_container.cpp">
+    <ClCompile Include="..\..\src\svg\svg_path_parse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\svg_style.cpp">
+    <ClCompile Include="..\..\src\svg\svg_shapes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\color.cpp">
+    <ClCompile Include="..\..\src\svg\svg_style.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\logger.cpp">
+    <ClCompile Include="..\..\src\svg\svg_transform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\svg\svg_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,61 +71,64 @@
     <ClInclude Include="..\..\src\asserts.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\geometry.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\utils.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\svg_paint.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\SDLWrapper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\profile_timer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_length.hpp">
+    <ClInclude Include="..\..\src\svg\color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_shapes.hpp">
+    <ClInclude Include="..\..\src\svg\geometry.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_element.hpp">
+    <ClInclude Include="..\..\src\svg\logger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_fwd.hpp">
+    <ClInclude Include="..\..\src\svg\svg_attribs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_path_parse.hpp">
+    <ClInclude Include="..\..\src\svg\svg_container.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_transform.hpp">
+    <ClInclude Include="..\..\src\svg\svg_element.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_parse.hpp">
+    <ClInclude Include="..\..\src\svg\svg_fwd.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_render.hpp">
+    <ClInclude Include="..\..\src\svg\svg_gradient.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_gradient.hpp">
+    <ClInclude Include="..\..\src\svg\svg_length.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_attribs.hpp">
+    <ClInclude Include="..\..\src\svg\svg_paint.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_container.hpp">
+    <ClInclude Include="..\..\src\svg\svg_parse.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\svg_style.hpp">
+    <ClInclude Include="..\..\src\svg\svg_path_parse.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\color.hpp">
+    <ClInclude Include="..\..\src\svg\svg_render.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\logger.hpp">
+    <ClInclude Include="..\..\src\svg\svg_shapes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\svg\svg_style.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\svg\svg_transform.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\svg\uri.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\svg\utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -135,7 +138,7 @@
     <Library Include="..\..\external\lib\cairo.lib" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\geometry.inl">
+    <None Include="..\..\src\svg\geometry.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

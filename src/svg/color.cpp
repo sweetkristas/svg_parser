@@ -25,7 +25,7 @@
 #include <map>
 #include <string>
 
-#include "asserts.hpp"
+#include "../asserts.hpp"
 #include "color.hpp"
 
 namespace KRE

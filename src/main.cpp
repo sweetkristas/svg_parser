@@ -7,7 +7,7 @@
 #include "asserts.hpp"
 #include "filesystem.hpp"
 #include "profile_timer.hpp"
-#include "svg_parse.hpp"
+#include "svg/svg_parse.hpp"
 #include "SDLWrapper.hpp"
 
 namespace 

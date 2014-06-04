@@ -1,4 +1,4 @@
-#include "asserts.hpp"
+#include "../asserts.hpp"
 #include "logger.hpp"
 
 const char* log_level_names[] = {

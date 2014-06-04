@@ -25,7 +25,7 @@
 #include <boost/lexical_cast.hpp>
 #include <map>
 
-#include "asserts.hpp"
+#include "../asserts.hpp"
 #include "svg_paint.hpp"
 
 namespace KRE

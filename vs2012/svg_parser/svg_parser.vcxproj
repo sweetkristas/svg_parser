@@ -11,45 +11,46 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\color.cpp" />
     <ClCompile Include="..\..\src\filesystem.cpp" />
-    <ClCompile Include="..\..\src\logger.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
-    <ClCompile Include="..\..\src\svg_attribs.cpp" />
-    <ClCompile Include="..\..\src\svg_container.cpp" />
-    <ClCompile Include="..\..\src\svg_element.cpp" />
-    <ClCompile Include="..\..\src\svg_gradient.cpp" />
-    <ClCompile Include="..\..\src\svg_paint.cpp" />
-    <ClCompile Include="..\..\src\svg_parse.cpp" />
-    <ClCompile Include="..\..\src\svg_path_parse.cpp" />
-    <ClCompile Include="..\..\src\svg_style.cpp" />
-    <ClCompile Include="..\..\src\svg_transform.cpp" />
-    <ClCompile Include="..\..\src\svg_shapes.cpp" />
-    <ClCompile Include="..\..\src\utils.cpp" />
+    <ClCompile Include="..\..\src\svg\color.cpp" />
+    <ClCompile Include="..\..\src\svg\logger.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_attribs.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_container.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_element.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_gradient.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_paint.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_parse.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_path_parse.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_shapes.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_style.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_transform.cpp" />
+    <ClCompile Include="..\..\src\svg\svg_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\asserts.hpp" />
-    <ClInclude Include="..\..\src\color.hpp" />
     <ClInclude Include="..\..\src\filesystem.hpp" />
     <ClInclude Include="..\..\src\formatter.hpp" />
-    <ClInclude Include="..\..\src\geometry.hpp" />
-    <ClInclude Include="..\..\src\logger.hpp" />
     <ClInclude Include="..\..\src\profile_timer.hpp" />
     <ClInclude Include="..\..\src\SDLWrapper.hpp" />
-    <ClInclude Include="..\..\src\svg_attribs.hpp" />
-    <ClInclude Include="..\..\src\svg_container.hpp" />
-    <ClInclude Include="..\..\src\svg_element.hpp" />
-    <ClInclude Include="..\..\src\svg_fwd.hpp" />
-    <ClInclude Include="..\..\src\svg_gradient.hpp" />
-    <ClInclude Include="..\..\src\svg_length.hpp" />
-    <ClInclude Include="..\..\src\svg_paint.hpp" />
-    <ClInclude Include="..\..\src\svg_parse.hpp" />
-    <ClInclude Include="..\..\src\svg_path_parse.hpp" />
-    <ClInclude Include="..\..\src\svg_render.hpp" />
-    <ClInclude Include="..\..\src\svg_style.hpp" />
-    <ClInclude Include="..\..\src\svg_transform.hpp" />
-    <ClInclude Include="..\..\src\svg_shapes.hpp" />
-    <ClInclude Include="..\..\src\utils.hpp" />
+    <ClInclude Include="..\..\src\svg\color.hpp" />
+    <ClInclude Include="..\..\src\svg\geometry.hpp" />
+    <ClInclude Include="..\..\src\svg\logger.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_attribs.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_container.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_element.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_fwd.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_gradient.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_length.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_paint.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_parse.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_path_parse.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_render.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_shapes.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_style.hpp" />
+    <ClInclude Include="..\..\src\svg\svg_transform.hpp" />
+    <ClInclude Include="..\..\src\svg\uri.hpp" />
+    <ClInclude Include="..\..\src\svg\utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\..\SDL\VisualC\SDLmain\Win32\Release\SDL2main.lib" />
@@ -57,7 +58,7 @@
     <Library Include="..\..\external\lib\cairo.lib" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\geometry.inl" />
+    <None Include="..\..\src\svg\geometry.inl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8DA8C0ED-BBAE-4391-A237-29FF0CAA6283}</ProjectGuid>

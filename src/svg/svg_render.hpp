@@ -26,7 +26,7 @@
 #include <cairo.h>
 #include <stack>
 
-#include "asserts.hpp"
+#include "../asserts.hpp"
 #include "color.hpp"
 
 namespace KRE

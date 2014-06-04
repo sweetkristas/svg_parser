@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "asserts.hpp"
+#include "../asserts.hpp"
 
 namespace geometry
 {
