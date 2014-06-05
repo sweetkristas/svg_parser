@@ -7,6 +7,7 @@
 objects = \
 	src/filesystem.o \
 	src/main.o \
+	src/ft_iface.o \
 	src/svg/color.o \
 	src/svg/logger.o \
 	src/svg/svg_container.o \

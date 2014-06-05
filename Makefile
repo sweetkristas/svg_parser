@@ -65,7 +65,7 @@ endif
 
 # Linker library options.
 LIBS := $(shell pkg-config --libs x11 gl ) \
-	$(shell pkg-config --libs sdl2 glew SDL2_image libpng zlib cairo) -lSDL2_ttf -lSDL2_mixer
+	$(shell pkg-config --libs sdl2 glew SDL2_image libpng zlib cairo freetype2) -lSDL2_ttf -lSDL2_mixer
 
 include Makefile.common
 
@@ -77,6 +77,16 @@ src/%.o : src/%.cpp
 	@sed -e 's|.*:|src/$*.o:|' < $*.d.tmp > src/$*.d
 	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
 		sed -e 's/^ *//' -e 's/$$/:/' >> src/$*.d
+	@rm -f $*.d.tmp
+
+src/svg/%.o : src/svg/%.cpp
+	@echo "Building:" $<
+	@$(CCACHE) $(CXX) $(BASE_CXXFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(INC) -c -o $@ $<
+	@$(CXX) $(BASE_CXXFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(INC) -MM $< > $*.d
+	@mv -f $*.d $*.d.tmp
+	@sed -e 's|.*:|src/svg/$*.o:|' < $*.d.tmp > src/svg/$*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+		sed -e 's/^ *//' -e 's/$$/:/' >> src/svg/$*.d
 	@rm -f $*.d.tmp
 
 svg_parser: $(objects) $(ogl_objects) $(sdl_objects) $(ogl_fixed_objects)
