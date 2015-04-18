@@ -25,6 +25,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <set>
+#include "svg_container.hpp"
 #include "svg_fwd.hpp"
 #include "svg_element.hpp"
 #include "svg_path_parse.hpp"
@@ -35,7 +36,7 @@ namespace KRE
 {
 	namespace SVG
 	{
-		class shape : public element
+		class shape : public container
 		{
 		public:
 			shape(element* doc, const boost::property_tree::ptree& pt);
@@ -138,7 +139,7 @@ namespace KRE
 		class text : public shape
 		{
 		public:
-			text(element* doc, const boost::property_tree::ptree& pt);
+			text(element* doc, const boost::property_tree::ptree& pt, bool is_tspan=false);
 			virtual ~text();
 		private:
 			void render_text(render_context& ctx) const;
@@ -156,6 +157,7 @@ namespace KRE
 				SPACING_AND_GLYPHS,
 			};
 			LengthAdjust adjust_;
+			bool is_tspan_;
 		};
 	}
 }

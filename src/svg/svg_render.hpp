@@ -26,9 +26,9 @@
 #include <cairo.h>
 #include <stack>
 
-#include "../asserts.hpp"
-#include "../ft_iface.hpp"
-#include "color.hpp"
+#include "asserts.hpp"
+#include "ft_iface.hpp"
+#include "Color.hpp"
 
 namespace KRE
 {
@@ -63,12 +63,19 @@ namespace KRE
 			// the drawing canvas.
 			render_context(cairo_t* cairo, unsigned width, unsigned height)
 				: cairo_(cairo),
-				width_(width),
-				height_(height)
-			{}
+				  width_(width),
+				  height_(height),
+				  text_x_(0),
+				  text_y_(0)
+			{
+			}
 			~render_context() {
-				ASSERT_LOG(fill_color_stack_.empty(), "Fill color stack in rendering context not empty at exit");
-				ASSERT_LOG(stroke_color_stack_.empty(), "Stroke color stack in rendering context not empty at exit");
+                if(!fill_color_stack_.empty()) {
+                    LOG_ERROR("Fill color stack in rendering context not empty at exit.");
+                }
+                if(!stroke_color_stack_.empty()) {
+                    LOG_ERROR("Stroke color stack in rendering context not empty at exit.");
+                }
 			}
 
 			cairo_t* cairo() { return cairo_; }
@@ -108,8 +115,8 @@ namespace KRE
 			double opacity_top() const {
 				return opacity_stack_.top();
 			}
-			color_ptr get_current_color() const { return current_color_; }
-			void set_current_color(color_ptr cc) { current_color_ = cc; }
+			ColorPtr get_current_color() const { return current_color_; }
+			void set_current_color(ColorPtr cc) { current_color_ = cc; }
 			unsigned width() const { return width_; }
 			unsigned height() const { return height_; }
 
@@ -122,9 +129,12 @@ namespace KRE
 			}
 
 			font_attribs_set& fa() { return font_attributes_; }
+			void set_text_xy(double x, double y) { text_x_ = x; text_y_ = y; }
+			double get_text_x() { return text_x_; }
+			double get_text_y() { return text_y_; }
 		private:
 			cairo_t* cairo_;
-			color_ptr current_color_;
+			ColorPtr current_color_;
 			std::stack<paint_ptr> fill_color_stack_;
 			std::stack<paint_ptr> stroke_color_stack_;
 			std::stack<double> opacity_stack_;
@@ -151,6 +161,8 @@ namespace KRE
 			svg_length kerning_value_;
 			*/
 			std::stack<double> letter_spacing_;
+			double text_x_;
+			double text_y_;
 		};
 
 	}

@@ -27,6 +27,9 @@
 #include "ft_iface.hpp"
 #include "utf8_to_codepoint.hpp"
 
+#pragma comment(lib, "libfreetype-6.lib")
+#pragma comment(lib, "libcairo-2.lib")
+
 namespace KRE
 {
 	namespace FT

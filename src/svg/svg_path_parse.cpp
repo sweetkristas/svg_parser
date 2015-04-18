@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2003-2013 by Kristina Simpson <sweet.kristas@gmail.com>
+	Copyright (C) 2013-2014 by Kristina Simpson <sweet.kristas@gmail.com>
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -40,8 +40,7 @@ reflected point (i.e., (newx1, newy1), the first control point of the current pa
 #include <iostream>
 #include <list>
 
-#include "../asserts.hpp"
-#include "../formatter.hpp"
+#include "formatter.hpp"
 #include "svg_fwd.hpp"
 #include "svg_path_parse.hpp"
 
@@ -77,7 +76,7 @@ namespace KRE
 			handle_cairo_render(ctx);
 
 			auto status = cairo_status(ctx.cairo_context());
-			ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status));
+			ASSERT_LOG(status == CAIRO_STATUS_SUCCESS, "Cairo error: " << cairo_status_to_string(status) << " : " << static_cast<int>(ins_));
 		}
 
 		class move_to_command : public path_command
@@ -293,13 +292,14 @@ namespace KRE
 		public:
 			elliptical_arc_command(bool absolute, double x, double y, double rx, double ry, double x_axis_rot, bool large_arc, bool sweep)
 				: path_command(PathInstruction::CUBIC_BEZIER, absolute),
-				x_(x), y_(y), 
-				rx_(rx), ry_(ry), 
-				large_arc_flag_(large_arc), 
-				sweep_flag_(sweep) 
+				  x_(x), 
+                  y_(y), 
+				  rx_(rx), 
+                  ry_(ry), 
+				  large_arc_flag_(large_arc), 
+				  sweep_flag_(sweep) 
 			{
 				x_axis_rotation_ = x_axis_rot / 180.0 * M_PI;
-				//std::cerr << "Elliptical arc: end(" << x << "," << y << "), axis(" << rx << "," << ry << "), x_axis_rot(" << x_axis_rot << "), large_arc(" << large_arc << "), sweep(" << sweep << ")" << std::endl;
 			}
 			virtual ~elliptical_arc_command() {}
 		private:
@@ -372,7 +372,6 @@ namespace KRE
 				const double t2 = theta_delta > 0 && !sweep_flag_ ? theta_delta-2.0*M_PI : theta_delta < 0 && sweep_flag_ ? theta_delta+2.0*M_PI : theta_delta;
 
 				const int n_segs = int(std::ceil(std::abs(t2/(M_PI*0.5+0.001))));
-				//std::cerr << "theta1=" << t1 << ", theta_delta=" << t2 << ", n_segs=" << n_segs << std::endl;
 				for(int i = 0; i < n_segs; i++) {
 					const double th0 = t1 + i * t2 / n_segs;
 					const double th1 = t1 + (i + 1) * t2 / n_segs;
@@ -395,7 +394,6 @@ namespace KRE
 
 				ctx.clear_control_points();
 			}
-			bool smooth_;
 			double x_;
 			double y_;
 			// elliptical arc radii

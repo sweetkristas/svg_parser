@@ -81,7 +81,7 @@ namespace KRE
 		}
 
 		shape::shape(element* doc, const ptree& pt)
-				: element(doc, pt)
+				: container(doc, pt)
 		{
 			auto attributes = pt.get_child_optional("<xmlattr>");
 			if(attributes) {
@@ -162,10 +162,10 @@ namespace KRE
 				}
 			}
 			if(0) {
-				std::cerr << "SVG: CIRCLE(" << cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
+				LOG_DEBUG("SVG: CIRCLE(" << cx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
 					<< "," << cy_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
 					<< "," << radius_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER)
-					<< ")" << std::endl;
+					<< ")");
 			}
 		}
 
@@ -307,8 +307,8 @@ namespace KRE
 			ASSERT_LOG(is_rounded_ == false, "XXX we don't support rounded rectangles -- yet");
 			double x = x_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double y = y_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-			double rx = rx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
-			double ry = ry_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			//double rx = rx_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
+			//double ry = ry_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double w  = width_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 			double h  = height_.value_in_specified_units(svg_length::SVG_LENGTHTYPE_NUMBER);
 
@@ -374,9 +374,10 @@ namespace KRE
 			shape::clip_render_path(ctx);
 		}
 
-		text::text(element* doc, const ptree& pt) 
+		text::text(element* doc, const ptree& pt, bool is_tspan) 
 			: shape(doc, pt),
-			adjust_(LengthAdjust::SPACING)
+			 adjust_(LengthAdjust::SPACING),
+			 is_tspan_(is_tspan)
 		{
 			// XXX should we use provided <xmltext> instead?
 			text_ = pt.get_value<std::string>();
@@ -435,7 +436,8 @@ namespace KRE
 			std::vector<cairo_glyph_t> glyphs;
 			FT_Face face = ctx.fa().top_font_face();
 			auto glyph_indicies = FT::get_glyphs_from_string(face, text_);
-			double x(0), y(0);
+			double x = x1_.size() > 0 ? x1_[0].value_in_specified_units(svg_length::LengthUnit::SVG_LENGTHTYPE_NUMBER) : is_tspan_ ? ctx.get_text_x() : 0;
+			double y = y1_.size() > 0 ? y1_[0].value_in_specified_units(svg_length::LengthUnit::SVG_LENGTHTYPE_NUMBER) : is_tspan_ ? ctx.get_text_y() : 0;
 			const double letter_spacing = ctx.letter_spacing_top();
 			for(auto g : glyph_indicies) {
 				cairo_glyph_t cg;
@@ -452,20 +454,27 @@ namespace KRE
 				} 
 				y += extent.y_advance;
 			}
-			cairo_glyph_path(ctx.cairo(), &glyphs[0], glyphs.size());
+			cairo_glyph_path(ctx.cairo(), &glyphs[0], static_cast<int>(glyphs.size()));
 			stroke_and_fill(ctx);
+			ctx.set_text_xy(x, y);
 		}
 
 		void text::handle_render(render_context& ctx) const 
 		{
-			render_text(ctx);
+			if(!text_.empty()) {
+				render_text(ctx);
+			}
+			render_children(ctx);
 			shape::render_path(ctx);
 		}
 
 		void text::handle_clip_render(render_context& ctx) const
 		{
-			render_text(ctx);
+			if(!text_.empty()) {
+				render_text(ctx);
+			}
 			cairo_clip(ctx.cairo());
+			clip_render_children(ctx);
 			shape::clip_render_path(ctx);
 		}
 

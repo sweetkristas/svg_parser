@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2003-2013 by Kristina Simpson <sweet.kristas@gmail.com>
+	Copyright (C) 2013-2014 by Kristina Simpson <sweet.kristas@gmail.com>
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -26,7 +26,7 @@
 
 #include <cfloat>
 #include <cmath>
-#include "../asserts.hpp"
+#include "asserts.hpp"
 #include "svg_transform.hpp"
 
 namespace KRE
@@ -80,7 +80,6 @@ namespace KRE
 			}
 		private:
 			void handle_apply(render_context& ctx) override {
-				//std::cerr << "XXX: " << as_string() << std::endl;
 				cairo_translate(ctx.cairo(), x_, y_);
 			}
 			void handle_apply_matrix(cairo_matrix_t* mtx) const override {
@@ -334,7 +333,7 @@ namespace KRE
 						}
 						state = STATE_TYPE;					
 					} else {
-						char* end = NULL;
+						char* end = nullptr;
 						double value = strtod(it->c_str(), &end);
 						if(value == 0 && it->c_str() == end) {
 							ASSERT_LOG(false, "Invalid number value: " << *it);

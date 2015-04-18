@@ -52,6 +52,8 @@ namespace KRE
 					elements_.emplace_back(new rectangle(parent, v.second));
 				} else if(v.first == "text") {
 					elements_.emplace_back(new text(parent, v.second));
+				} else if(v.first == "tspan") {
+					elements_.emplace_back(new text(parent, v.second, true));
 				} else if(v.first == "line") {
 					elements_.emplace_back(new line(parent,v.second));
 				} else if(v.first == "circle") {
@@ -77,7 +79,7 @@ namespace KRE
 				} else if(v.first == "<xmlcomment>") {
 					// ignore
 				} else {
-					std::cerr << "SVG: svg unhandled child element: " << v.first << " : " << v.second.data() << std::endl;
+					LOG_ERROR("SVG: svg unhandled child element: " << v.first << " : " << v.second.data());
 				}
 			}
 		}
